@@ -15,51 +15,17 @@ using System.Collections.ObjectModel;
 
 namespace ElCamino.AspNetCore.Identity.DocumentDB
 {
-    public class IdentityCloudContext : IdentityCloudContext<IdentityUser<string>, string>
-
+    public class IdentityCloudContext : IDisposable       
     {
-        public IdentityCloudContext(IdentityConfiguration config)
-            : base(config)
-        {
-        }
-    }
-    public class IdentityCloudContext<TKey> : IdentityCloudContext<IdentityUser<TKey>, TKey>
-        where TKey : IEquatable<TKey>
-    {
-        public IdentityCloudContext(IdentityConfiguration config)
-            : base(config)
-        {
-        }
-    } 
-
-    public class IdentityCloudContext<TUser, TKey> : IdentityCloudContext<TUser, IdentityRole<TKey>, TKey, IdentityUserLogin<TKey>, IdentityUserRole<TKey>, IdentityUserClaim<TKey>>
-         where TUser : IdentityUser<TKey>, new()
-         where TKey : IEquatable<TKey>
-
-    {
-
-        public IdentityCloudContext(IdentityConfiguration config)
-            : base(config)
-        {
-        }
-
-    }
-
-    public class IdentityCloudContext<TUser, TRole, TKey, TUserLogin, TUserRole, TUserClaim> : IDisposable
-        where TUser : IdentityUser<TKey>, new()
-        where TRole : IdentityRole<TKey>, new()
-        where TUserLogin : IdentityUserLogin<TKey>, new()
-        where TUserRole : IdentityUserRole<TKey>, new()
-        where TUserClaim : IdentityUserClaim<TKey>, new()
-        where TKey : IEquatable<TKey>
-    {
-        protected DocumentClient _client = null;
-        protected Database _db = null;
-        protected DocumentCollection _identityDocumentCollection;
+        private DocumentClient _client = null;
+        private Database _db = null;
+        private DocumentCollection _identityDocumentCollection;
         private StoredProcedure _getUserByEmailSproc = null;
         private StoredProcedure _getUserByUserNameSproc = null;
         private StoredProcedure _getUserByIdSproc = null;
         private StoredProcedure _getUserByLoginSproc = null;
+        private string _sessionToken = string.Empty;
+        private bool _disposed = false;
 
         public StoredProcedure GetUserByLoginSproc
         {
@@ -80,9 +46,6 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB
         {
             get { return _getUserByEmailSproc; }
         }
-        protected string _sessionToken = string.Empty;
-        protected bool _disposed = false;
-
        
 
         public IdentityCloudContext(IdentityConfiguration config)
@@ -306,13 +269,14 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB
             set { _identityDocumentCollection = value; }
         }
 
-        private void ThrowIfDisposed()
+        protected void ThrowIfDisposed()
         {
             if (this._disposed)
             {
                 throw new ObjectDisposedException(base.GetType().Name);
             }
         }
+
         public void Dispose()
         {
             this.Dispose(true);
@@ -326,9 +290,9 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB
                 {
                     _client.Dispose();
                 }
+                _disposed = true;
                 _client = null;
                 _db = null;
-                _disposed = true;
                 _identityDocumentCollection = null;
                 _sessionToken = null;
             }

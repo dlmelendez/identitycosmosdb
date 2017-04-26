@@ -19,7 +19,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Type userStoreType = typeof(UserStore<,,>).MakeGenericType(builder.UserType, builder.RoleType, contextType);
             Type roleStoreType = typeof(RoleStore<,>).MakeGenericType(builder.RoleType, contextType);
 
-            builder.Services.AddSingleton(contextType, contextType);
+            builder.Services.AddScoped(contextType, contextType);
 
             builder.Services.AddScoped(
                 typeof(IUserStore<>).MakeGenericType(builder.UserType),
