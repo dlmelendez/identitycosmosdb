@@ -12,7 +12,7 @@
     <UserSecretsId>aspnet-samplecore.mvc-7879744d-6d27-4ada-8655-fd6e1ee429b5</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="ElCamino.AspNetCore.Identity.DocumentDB" Version="0.9.2" />
+    <PackageReference Include="ElCamino.AspNetCore.Identity.DocumentDB" Version="1.0.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.0.0" />
     <PackageReference Include="Microsoft.AspNetCore" Version="1.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="1.1.1" />
