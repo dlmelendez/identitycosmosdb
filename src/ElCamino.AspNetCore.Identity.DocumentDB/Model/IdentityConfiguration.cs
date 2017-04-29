@@ -1,8 +1,10 @@
 ﻿// MIT License Copyright 2017 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 
+using ElCamino.AspNetCore.Identity.DocumentDB.Helpers;
 using Microsoft.Azure.Documents.Client;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using System.Security;
 
 namespace ElCamino.AspNetCore.Identity.DocumentDB.Model
 {
@@ -20,6 +22,15 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Model
 
         [JsonIgnore]
         public ConnectionPolicy Policy { get; set; } = ConnectionPolicy.Default;
+
+        public override string ToString()
+        {
+            return HashHelper.ConvertToHash(
+                Uri ?? string.Empty + 
+                AuthKey ?? string.Empty + 
+                Database ?? string.Empty + 
+                IdentityCollection ?? string.Empty); 
+        }
 
     }
 }
