@@ -12,6 +12,7 @@
     <PackageId>ElCamino.AspNetCore.Identity.DocumentDB</PackageId>
     <PackageTags>ASP.NET;Identity Core;Azure;DocumentDB;MVC;UserStore;RoleStore;UserManager;Microsoft.AspNetCore.Identity</PackageTags>
     <PackageReleaseNotes>This project is an open source high performance plugin to ASP.NET Core Identity framework using Azure DocumentDB.
+* Performance improvement to DocumentDB client initialization.
 </PackageReleaseNotes>
     <PackageIconUrl>https://dlmelendez.github.io/identityazuretable/images/projectNugetPic.png</PackageIconUrl>
     <PackageLicenseUrl>https://github.com/dlmelendez/identitycoredocumentdb/blob/master/LICENSE</PackageLicenseUrl>
