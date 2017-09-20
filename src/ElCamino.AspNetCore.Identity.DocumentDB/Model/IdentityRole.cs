@@ -12,19 +12,6 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Model
     public class IdentityRole : IdentityRole<string>
     {
 
-        [JsonProperty(PropertyName = "id")]
-        public override string Id
-        {
-            get
-            {
-                return base.Id;
-            }
-            set
-            {
-                base.Id = value;
-            }
-        }
-
         public IdentityRole()
         {
             Id = Guid.NewGuid().ToString();
@@ -42,32 +29,32 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Model
     {
     }
 
-    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
-    public class IdentityRole<TKey, TUserRole, TRoleClaim> : Resource
+    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]   
+    public class IdentityRole<TKey, TUserRole, TRoleClaim> : Microsoft.AspNetCore.Identity.IdentityRole<TKey>, IResource<TKey>
         where TKey : IEquatable<TKey>
         where TUserRole : IdentityUserRole<TKey>
         where TRoleClaim : IdentityRoleClaim<TKey>
     {
         public IdentityRole() { }
 
+        [JsonProperty(PropertyName = "id")]
+        public override TKey Id { get; set; }
+
+        [JsonProperty(PropertyName = "_rid")]
+        public virtual string ResourceId { get; set; }
+
+        [JsonProperty(PropertyName = "_self")]
+        public virtual string SelfLink { get; set; }
+
         [JsonIgnore]
-        private TKey _id;
-        public new virtual TKey Id
-        {
-            get { return _id; }
-            set
-            {
-                _id = value;
-                if (_id == null)
-                {
-                    base.Id = null;
-                }
-                else
-                {
-                    base.Id = value.ToString();
-                }
-            }
-        }
+        public string AltLink { get; set; }
+
+        [JsonConverter(typeof(UnixDateTimeConverter))]
+        [JsonProperty(PropertyName = "_ts")]
+        public virtual DateTime Timestamp { get; set; }
+
+        [JsonProperty(PropertyName = "_etag")]
+        public virtual string ETag { get; set; }
 
         public IdentityRole(string roleName) : this()
         {
@@ -80,13 +67,13 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Model
 
 
         [JsonProperty(PropertyName = "name")]
-        public virtual string Name { get; set; }
+        public override string Name { get; set; }
 
         [JsonProperty(PropertyName = "normalizedName")]
-        public virtual string NormalizedName { get; set; }
+        public override string NormalizedName { get; set; }
 
         [JsonProperty(PropertyName = "concurrencyStamp")]
-        public virtual string ConcurrencyStamp { get; set; } = Guid.NewGuid().ToString();
+        public override string ConcurrencyStamp { get; set; } = Guid.NewGuid().ToString();
 
         public override string ToString()
         {

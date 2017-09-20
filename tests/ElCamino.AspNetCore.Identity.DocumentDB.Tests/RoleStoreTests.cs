@@ -11,6 +11,8 @@ using System.Linq;
 using System.Threading;
 using ElCamino.AspNetCore.Identity.DocumentDB.Tests.ModelTests;
 using System.Security.Claims;
+using IdentityRole = ElCamino.AspNetCore.Identity.DocumentDB.Model.IdentityRole;
+using IdentityUser = ElCamino.AspNetCore.Identity.DocumentDB.Model.IdentityUser;
 
 namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 {
@@ -39,12 +41,6 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
         {
         }
 
-        [TestMethod]
-        [TestCategory("RoleStore")]
-        public void RoleStoreCtors()
-        {
-            Assert.ThrowsException<ArgumentNullException>(() => new RoleStore<IdentityRole>(null));
-        }
 
         private Claim GenRoleClaim()
         {
@@ -57,6 +53,7 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
         {
             RoleManager<IdentityRole> manager = CreateRoleManager();
             string roleNew = string.Format("TestRole_{0}", Guid.NewGuid());
+            Console.WriteLine($"RoleId: {roleNew}");
             var role = new IdentityRole(roleNew);
             var start = DateTime.UtcNow;
             var createTask = manager.CreateAsync(role);
@@ -88,6 +85,9 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
             Console.WriteLine("CreateRoleAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
 
             AddRoleClaimHelper(role, GenRoleClaim());
+
+            role = manager.FindByIdAsync(role.Id).Result;
+            WriteLineObject(role);
         }
 
         private void AddRoleClaimHelper(IdentityRole role, Claim claim)
@@ -99,7 +99,7 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
             var claimsTask = manager.GetClaimsAsync(role);
 
             claimsTask.Wait();
-            Assert.IsTrue(claimsTask.Result.ToList().Any(c => c.Value == claim.Value & c.ValueType == claim.ValueType), "Claim not found");
+            Assert.IsTrue(claimsTask.Result.ToList().Any(c => c.Value == claim.Value & c.ValueType == claim.ValueType), "Claim not found");           
         }
 
         private void RemoveRoleClaimHelper(IdentityRole role, Claim claim)
@@ -167,10 +167,10 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
         [TestCategory("RoleStore.Role")]
         public void ThrowIfDisposed()
         {
-            RoleStore<IdentityRole, IdentityCloudContext> store = new RoleStore<IdentityRole, IdentityCloudContext>(new IdentityCloudContext(GetConfig()));
+            RoleStore<IdentityRole, IdentityCloudContext> store = new RoleStore<IdentityRole, IdentityCloudContext>(new IdentityCloudContext(GetConfig()), new IdentityErrorDescriber());
             store.Dispose();
 
-            AssertInnerExceptionType<AggregateException, ObjectDisposedException>(() => store.DeleteAsync(null).Wait());
+            AssertInnerExceptionType<AggregateException, ObjectDisposedException>(() => store.DeleteAsync(new IdentityRole()).Wait());
         }
 
         [TestMethod]

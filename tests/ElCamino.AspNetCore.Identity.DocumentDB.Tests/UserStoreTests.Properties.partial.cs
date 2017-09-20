@@ -11,6 +11,8 @@ using System.Linq;
 using System.Threading;
 using ElCamino.AspNetCore.Identity.DocumentDB.Tests.ModelTests;
 using System.Security.Claims;
+using IdentityRole = ElCamino.AspNetCore.Identity.DocumentDB.Model.IdentityRole;
+using IdentityUser = ElCamino.AspNetCore.Identity.DocumentDB.Model.IdentityUser;
 
 namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 {
@@ -314,8 +316,6 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
             user.PasswordHash = passwordHash;
 
             Assert.ThrowsException<ArgumentNullException>(() => store.GetPasswordHashAsync(null).Wait());
-
-            Assert.ThrowsException<ArgumentNullException>(() => store.HasPasswordAsync(null).Wait());
 
             Assert.ThrowsException<ArgumentNullException>(() => store.SetPasswordHashAsync(null, passwordHash).Wait());
 

@@ -18,17 +18,21 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Extensions
                 return Task.Run(() => { return source.Where(where).ToList(); }, cancellationToken);
         }
 
-        public static Task<TSource> FirstOrDefaultAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> where, CancellationToken cancellationToken = default(CancellationToken))
+        public static Task<TSource> FirstOrDefaultAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> where = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             return Task.Run(() => {
-                return source.Where(where).FirstOrDefault();
+                if (where == null)
+                    return source.Where(where).FirstOrDefault();
+                return source.Where(where).FirstOrDefault(where);
             }, cancellationToken);
         }
 
-        public static Task<TSource> SingleOrDefaultAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> where, CancellationToken cancellationToken = default(CancellationToken))
+        public static Task<TSource> SingleOrDefaultAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> where = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             return Task.Run(() => {
-                return source.Where(where).SingleOrDefault();
+                if(where == null)
+                    return source.Where(where).SingleOrDefault();
+                return source.Where(where).SingleOrDefault(where);
             }, cancellationToken);
         }
     }

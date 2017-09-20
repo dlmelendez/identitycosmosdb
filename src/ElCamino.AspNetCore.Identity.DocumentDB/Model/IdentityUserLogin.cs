@@ -7,14 +7,15 @@ using System;
 namespace ElCamino.AspNetCore.Identity.DocumentDB.Model
 {
     [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
-    public class IdentityUserLogin<TKey> where TKey : IEquatable<TKey>
+    public class IdentityUserLogin<TKey> : Microsoft.AspNetCore.Identity.IdentityUserLogin<TKey>
+        where TKey : IEquatable<TKey>
     {
-        public virtual string LoginProvider { get; set; }
+        public override string LoginProvider { get; set; }
 
-        public virtual string ProviderKey { get; set; }
+        public override string ProviderKey { get; set; }
 
-        public virtual string ProviderDisplayName { get; set; }
+        public override string ProviderDisplayName { get; set; }
 
-        public virtual TKey UserId { get; set; }
+        public override TKey UserId { get; set; }
     }
 }

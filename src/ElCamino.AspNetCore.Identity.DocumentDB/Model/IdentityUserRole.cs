@@ -7,12 +7,13 @@ using System;
 namespace ElCamino.AspNetCore.Identity.DocumentDB.Model
 {
     [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
-    public class IdentityUserRole<TKey> where TKey : IEquatable<TKey>
+    public class IdentityUserRole<TKey> : Microsoft.AspNetCore.Identity.IdentityUserRole<TKey>
+        where TKey : IEquatable<TKey>
     {
         [JsonProperty("userId")]
-        public virtual TKey UserId { get; set; }
+        public override TKey UserId { get; set; }
 
         [JsonProperty("roleId")]
-        public virtual TKey RoleId { get; set; }
+        public override TKey RoleId { get; set; }
     }
 }

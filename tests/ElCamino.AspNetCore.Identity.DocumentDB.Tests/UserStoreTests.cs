@@ -14,6 +14,8 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using System.Collections.Generic;
+using IdentityRole = ElCamino.AspNetCore.Identity.DocumentDB.Model.IdentityRole;
+using IdentityUser = ElCamino.AspNetCore.Identity.DocumentDB.Model.IdentityUser;
 
 namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 {
@@ -154,12 +156,7 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
             return user;
         }
 
-        [TestMethod]
-        [TestCategory("UserStore.User")]
-        public void UserStoreCtors()
-        {
-            Assert.ThrowsException<ArgumentNullException>(() => new UserStore(null));
-        }
+        
 
         [TestMethod]
         [TestCategory("UserStore.User")]
@@ -619,6 +616,9 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
             string tokenValue = Guid.NewGuid().ToString();
             string tokenName = string.Format("TokenName{0}", Guid.NewGuid().ToString());
             string tokenName2 = string.Format("TokenName2{0}", Guid.NewGuid().ToString());
+            Console.WriteLine($"UserId: {user.Id}");
+            Console.WriteLine($"TokenName: {tokenName2}");
+            Console.WriteLine($"ToienValue: {tokenValue}");
 
             manager.SetAuthenticationTokenAsync(user,
                 Constants.LoginProviders.GoogleProvider.LoginProvider,
@@ -742,6 +742,7 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
             DateTime start2 = DateTime.UtcNow;
             ApplicationUser tempUser = null;
             IdentityRole role = CreateRoleIfNotExists(strUserRole);
+            Console.WriteLine($"RoleId: {role.Id}");
             for (int i = 0; i < userCount; i++)
             {
                 DateTime start = DateTime.UtcNow;
@@ -780,6 +781,7 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
         public IdentityRole AddUserRoleHelper(ApplicationUser user, string roleName)
         {
             var identityRole = CreateRoleIfNotExists(roleName);
+            Console.WriteLine($"RoleId: {identityRole.Id}");
 
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
             UserManager<ApplicationUser> manager = CreateUserManager();
@@ -1018,11 +1020,11 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
         [TestCategory("UserStore.User")]
         public void ThrowIfDisposed()
         {
-            var store = new UserStore<ApplicationUser, IdentityRole, IdentityCloudContext>(GetContext());
+            var store = new UserStore<ApplicationUser, IdentityRole, IdentityCloudContext>(GetContext(), describer: new IdentityErrorDescriber());
             store.Dispose();
             GC.Collect();
 
-            Assert.IsTrue(Assert.ThrowsException<AggregateException>(() => store.DeleteAsync(null).Wait()).InnerException is ObjectDisposedException);            
+            Assert.IsTrue(Assert.ThrowsException<AggregateException>(() => store.DeleteAsync(new ApplicationUser()).Wait()).InnerException is ObjectDisposedException);            
         }
 
     }

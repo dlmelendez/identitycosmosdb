@@ -20,6 +20,7 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Model
         {
             UserName = userName;
         }
+
     }
 
     [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
@@ -28,76 +29,81 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Model
     { }
 
     [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
-    public class IdentityUser<TKey, TUserClaim, TUserRole, TUserLogin> : Resource  
+    public class IdentityUser<TKey, TUserClaim, TUserRole, TUserLogin> : Microsoft.AspNetCore.Identity.IdentityUser<TKey>, IResource<TKey>
         where TKey : IEquatable<TKey>
     {
         public IdentityUser() { }
 
         public IdentityUser(string userName) : this()
         {
-            UserName = userName;
+            UserName = userName; 
         }
+
+        [JsonProperty(PropertyName = "id")]
+        public override TKey Id { get => base.Id; set => base.Id = value; }
+
+        [JsonProperty(PropertyName = "_rid")]
+        public virtual string ResourceId { get; set; }
+
+        [JsonProperty(PropertyName = "_self")]
+        public virtual string SelfLink { get; set; }
 
         [JsonIgnore]
-        private TKey _id;
-        public new virtual TKey Id
-        {
-            get { return _id; }
-            set
-            {
-                _id = value;
-                if (_id == null)
-                {
-                    base.Id = null;
-                }
-                else
-                {
-                    base.Id = value.ToString();
-                }
-            }
-        }
+        public string AltLink { get; set; }
+
+        [JsonConverter(typeof(UnixDateTimeConverter))]
+        [JsonProperty(PropertyName = "_ts")]
+        public virtual DateTime Timestamp { get; set; }
+
+        [JsonProperty(PropertyName = "_etag")]
+        public virtual string ETag { get; set; }
+
 
         [JsonProperty("userName")]
-        public virtual string UserName { get; set; }
+        public override string UserName { get; set; }
 
         [JsonProperty("normalizedUserName")]
-        public virtual string NormalizedUserName { get; set; }
+        public override string NormalizedUserName { get; set; }
 
         [JsonProperty("email")]
-        public virtual string Email { get; set; }
+        public override string Email { get; set; }
 
         [JsonProperty("normalizedEmail")]
-        public virtual string NormalizedEmail { get; set; }
+        public override string NormalizedEmail { get; set; }
 
         [JsonProperty("emailConfirmed")]
-        public virtual bool EmailConfirmed { get; set; }
+        public override bool EmailConfirmed { get; set; }
 
         [JsonProperty("passwordHash")]
-        public virtual string PasswordHash { get; set; }
+        public override string PasswordHash { get; set; }
 
         [JsonProperty("securityStamp")]
-        public virtual string SecurityStamp { get; set; }
+        public override string SecurityStamp { get; set; }
 
         [JsonProperty("concurrencyStamp")]
-        public virtual string ConcurrencyStamp { get; set; } = Guid.NewGuid().ToString();
+        public override string ConcurrencyStamp { get; set; } = Guid.NewGuid().ToString();
 
         [JsonProperty("phoneNumber")]
-        public virtual string PhoneNumber { get; set; }
+        public override string PhoneNumber { get; set; }
 
         [JsonProperty("phoneNumberConfirmed")]
-        public virtual bool PhoneNumberConfirmed { get; set; }
+        public override bool PhoneNumberConfirmed { get; set; }
 
         [JsonProperty("twoFactorEnabled")]
-        public virtual bool TwoFactorEnabled { get; set; }
+        public override bool TwoFactorEnabled { get; set; }
 
         [JsonProperty("lockoutEnd")]
-        public virtual DateTimeOffset? LockoutEnd { get; set; }
+        public override DateTimeOffset? LockoutEnd { get; set; }
 
         [JsonProperty("lockoutEnabled")]
-        public virtual bool LockoutEnabled { get; set; }
+        public override bool LockoutEnabled { get; set; }
 
         [JsonProperty("accessFailedCount")]
-        public virtual int AccessFailedCount { get; set; }
+        public override int AccessFailedCount { get; set; }
+
+
+
+
 
         [JsonProperty("roles")]
         public virtual IList<TUserRole> Roles { get; } = new List<TUserRole>();
@@ -107,7 +113,7 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Model
 
         [JsonProperty("logins")]
         public virtual IList<TUserLogin> Logins { get; } = new List<TUserLogin>();
-
+        
         public override string ToString()
         {
             return UserName;

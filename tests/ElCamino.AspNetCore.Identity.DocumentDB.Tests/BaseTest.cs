@@ -16,8 +16,8 @@ using Microsoft.Azure.Documents.Client;
 namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 {
     public partial class BaseTest<TUser, TRole, TContext> : IDisposable
-        where TUser : IdentityUser, new()
-        where TRole : IdentityRole, new()
+        where TUser : Model.IdentityUser, new()
+        where TRole : Model.IdentityRole, new()
         where TContext : IdentityCloudContext
     {
 
@@ -150,7 +150,7 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             // Add Identity services to the services container.
-            services.AddIdentity<TUser, IdentityRole>((config) =>
+            services.AddIdentity<TUser, Model.IdentityRole>((config) =>
             {
                 config.User.RequireUniqueEmail = options.User.RequireUniqueEmail;
             })

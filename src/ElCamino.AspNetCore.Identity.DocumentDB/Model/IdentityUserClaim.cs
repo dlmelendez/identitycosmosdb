@@ -8,24 +8,21 @@ using System.Security.Claims;
 namespace ElCamino.AspNetCore.Identity.DocumentDB.Model
 {
     [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
-    public class IdentityUserClaim<TKey> where TKey : IEquatable<TKey>
+    public class IdentityUserClaim<TKey> : Microsoft.AspNetCore.Identity.IdentityUserClaim<TKey> 
+        where TKey : IEquatable<TKey>
     {
-        
-        public virtual TKey UserId { get; set; }
+        [JsonIgnore]
+        public override int Id { get => base.Id; set => base.Id = value; }
 
-        public virtual string ClaimType { get; set; }
+        [JsonProperty(PropertyName = "userId")]
+        public override TKey UserId { get; set; }
 
-        public virtual string ClaimValue { get; set; }
+        [JsonProperty(PropertyName = "claimType")]
+        public override string ClaimType { get; set; }
 
-        public virtual Claim ToClaim()
-        {
-            return new Claim(ClaimType, ClaimValue);
-        }
+        [JsonProperty(PropertyName = "claimValue")]
+        public override string ClaimValue { get; set; }
 
-        public virtual void InitializeFromClaim(Claim claim)
-        {
-            ClaimType = claim.Type;
-            ClaimValue = claim.Value;
-        }
+       
     }
 }

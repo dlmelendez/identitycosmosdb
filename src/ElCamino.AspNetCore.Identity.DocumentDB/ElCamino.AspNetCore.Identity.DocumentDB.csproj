@@ -1,18 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <PropertyGroup>
-    <Description>Azure DocumentDB Provider to support AspNet Identity Core 1.x frameworks for .NET Standard and Core.</Description>
+    <Description>Azure CosmosDB/DocumentDB Provider to support AspNet Identity Core 2.x frameworks for .NET.</Description>
     <Copyright>Copyright ©  2017 David Melendez, MIT License</Copyright>
     <AssemblyTitle>Azure DocumentDB Provider for ASP.NET Identity Core</AssemblyTitle>
     <Authors>David Melendez</Authors>
-    <TargetFramework>netstandard1.6</TargetFramework>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>ElCamino.AspNetCore.Identity.DocumentDB</AssemblyName>
     <AssemblyOriginatorKeyFile>../../tools/Key.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
     <PackageId>ElCamino.AspNetCore.Identity.DocumentDB</PackageId>
-    <PackageTags>ASP.NET;Identity Core;Azure;DocumentDB;MVC;UserStore;RoleStore;UserManager;Microsoft.AspNetCore.Identity</PackageTags>
-    <PackageReleaseNotes>This project is an open source high performance plugin to ASP.NET Core Identity framework using Azure DocumentDB.
-* Performance improvement to DocumentDB client initialization.
+    <PackageTags>ASP.NET;Identity Core;Azure;CosmosDB;DocumentDB;MVC;UserStore;RoleStore;UserManager;Microsoft.AspNetCore.Identity</PackageTags>
+    <PackageReleaseNotes>This project is an open source high performance plugin to ASP.NET Core Identity framework using Azure CosmosDB/DocumentDB.
+Updated to Identity Core 2.0
 </PackageReleaseNotes>
     <PackageIconUrl>https://dlmelendez.github.io/identityazuretable/images/projectNugetPic.png</PackageIconUrl>
     <PackageLicenseUrl>https://github.com/dlmelendez/identitycoredocumentdb/blob/master/LICENSE</PackageLicenseUrl>
@@ -20,16 +20,17 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/dlmelendez/identitycoredocumentdb.git</RepositoryUrl>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>1.0.0</Version>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <Version>2.0.0</Version>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
     <PackageProjectUrl>https://github.com/dlmelendez/identitycoredocumentdb</PackageProjectUrl>
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="1.1.1" />
-    <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="1.2.2" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="1.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="1.5.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="2.0.0" />
     <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup>
