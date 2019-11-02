@@ -342,9 +342,7 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
             CreateTestUser<ApplicationUser>(true, true, email);
 
             DateTime start3 = DateTime.UtcNow;
-            var list3 = manager.Users.Where(w=> w.Email == email).Select(s => s.Email).ToList();
-
-            Console.WriteLine(list3.First());
+            var list3 = manager.Users.Where(w=> w.Email != null).Select(s => s.Email).ToList();
 
             Console.WriteLine("UserQuery: {0} seconds", (DateTime.UtcNow - start3).TotalSeconds);
             Console.WriteLine("UserQuery.Email: {0} users", list3.Count());
@@ -396,7 +394,7 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
             Console.WriteLine("");
 
             DateTime start9 = DateTime.UtcNow;
-            var list9 = manager.Users.Where(w => w.Email != null).ToList().Select(s => s.Email).First();
+            var list9 = manager.Users.Where(w => w.Email != null).ToList().Select(s => s.Email).FirstOrDefault();
 
             Console.WriteLine("UserQuery.Email.First(): {0} seconds", (DateTime.UtcNow - start9).TotalSeconds);
             Console.WriteLine("");
