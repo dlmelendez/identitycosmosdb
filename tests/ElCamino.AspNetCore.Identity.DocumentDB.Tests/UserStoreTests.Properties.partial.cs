@@ -338,10 +338,11 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
             Console.WriteLine("UserQuery: {0} users", list.Count());
             Console.WriteLine("");
 
-            CreateTestUser<ApplicationUser>(true, true, "A" + Guid.NewGuid().ToString() + "@gmail.com");
+            string email = "A" + Guid.NewGuid().ToString() + "@gmail.com";
+            CreateTestUser<ApplicationUser>(true, true, email);
 
             DateTime start3 = DateTime.UtcNow;
-            var list3 = manager.Users.Where(w=> w.Email !=null).Select(s => s.Email).ToList();
+            var list3 = manager.Users.Where(w=> w.Email == email).Select(s => s.Email).ToList();
 
             Console.WriteLine(list3.First());
 
