@@ -15,8 +15,8 @@
       Check https://github.com/dlmelendez/identitycoredocumentdb/releases for the latest release information.
 
     </PackageReleaseNotes>
-    <PackageIconUrl>https://dlmelendez.github.io/identityazuretable/images/projectNugetPic.png</PackageIconUrl>
-    <PackageLicenseUrl>https://github.com/dlmelendez/identitycoredocumentdb/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageIcon>projectNugetPic.png</PackageIcon>
+    <PackageLicenseUrl></PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/dlmelendez/identitycoredocumentdb.git</RepositoryUrl>
@@ -25,6 +25,11 @@
     <AssemblyVersion>2.1.0.0</AssemblyVersion>
     <FileVersion>2.1.0.0</FileVersion>
     <PackageProjectUrl>https://github.com/dlmelendez/identitycoredocumentdb</PackageProjectUrl>
+    <DebugType>Full</DebugType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
   </PropertyGroup>
   
   <ItemGroup>
@@ -61,4 +66,8 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="projectNugetPic.png" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+
 </Project>
