@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <PropertyGroup>
-    <Description>Azure CosmosDB/DocumentDB Provider to support AspNet Identity Core 2.x frameworks for .NET.</Description>
+    <Description>Azure CosmosDB Provider to support AspNet Identity Core frameworks for .NET.</Description>
     <Copyright>Copyright © 2019 David Melendez, MIT License</Copyright>
     <AssemblyTitle>Azure DocumentDB Provider for ASP.NET Identity Core</AssemblyTitle>
     <Authors>David Melendez</Authors>
@@ -21,9 +21,9 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/dlmelendez/identitycoredocumentdb.git</RepositoryUrl>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>2.1.0</Version>
-    <AssemblyVersion>2.1.0.0</AssemblyVersion>
-    <FileVersion>2.1.0.0</FileVersion>
+    <Version>2.2.0</Version>
+    <AssemblyVersion>2.2.0.0</AssemblyVersion>
+    <FileVersion>2.2.0.0</FileVersion>
     <PackageProjectUrl>https://github.com/dlmelendez/identitycoredocumentdb</PackageProjectUrl>
     <DebugType>Full</DebugType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -67,7 +67,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="projectNugetPic.png" Pack="true" PackagePath="\"/>
+    <None Include="projectNugetPic.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

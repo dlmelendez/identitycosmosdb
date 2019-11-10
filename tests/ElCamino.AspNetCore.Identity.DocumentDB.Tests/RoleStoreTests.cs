@@ -51,7 +51,7 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
         [TestCategory("RoleStore.Role")]
         public void AddRemoveRoleClaim()
         {
-            RoleManager<IdentityRole> manager = CreateRoleManager();
+            RoleManager<IdentityRole> manager = CreateRoleManager(true);
             string roleNew = string.Format("TestRole_{0}", Guid.NewGuid());
             Console.WriteLine($"RoleId: {roleNew}");
             var role = new IdentityRole(roleNew);
@@ -74,8 +74,8 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
         [TestCategory("RoleStore.Role")]
         public void AddRoleClaim()
         {
-            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore();
-            RoleManager<IdentityRole> manager = CreateRoleManager();
+            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore(true);
+            RoleManager<IdentityRole> manager = CreateRoleManager(true);
             string roleNew = string.Format("TestRole_{0}", Guid.NewGuid());
             var role = new IdentityRole(roleNew);
             var start = DateTime.UtcNow;
@@ -92,7 +92,7 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         private void AddRoleClaimHelper(IdentityRole role, Claim claim)
         {
-            RoleManager<IdentityRole> manager = CreateRoleManager();
+            RoleManager<IdentityRole> manager = CreateRoleManager(true);
             var userClaimTask = manager.AddClaimAsync(role, claim);
 
             userClaimTask.Wait();
@@ -104,8 +104,8 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         private void RemoveRoleClaimHelper(IdentityRole role, Claim claim)
         {
-            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore();
-            RoleManager<IdentityRole> manager = CreateRoleManager();
+            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore(true);
+            RoleManager<IdentityRole> manager = CreateRoleManager(true);
             var userClaimTask = manager.RemoveClaimAsync(role, claim);
 
             userClaimTask.Wait();
@@ -145,8 +145,8 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
         [TestCategory("RoleStore.Role")]
         public void CreateRole()
         {
-            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore();
-            RoleManager<IdentityRole> manager = CreateRoleManager();
+            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore(true);
+            RoleManager<IdentityRole> manager = CreateRoleManager(true);
             var role = CreateRoleHelper(manager);
             WriteLineObject<IdentityRole>(role);
 
@@ -177,8 +177,8 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
         [TestCategory("RoleStore.Role")]
         public void UpdateRole()
         {
-            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore();
-            RoleManager<IdentityRole> manager = CreateRoleManager();
+            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore(true);
+            RoleManager<IdentityRole> manager = CreateRoleManager(true);
             string roleNew = string.Format("TestRole_{0}", Guid.NewGuid());
 
             var role = new IdentityRole(roleNew);
@@ -201,8 +201,8 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
         [TestCategory("RoleStore.Role")]
         public void UpdateRole2()
         {
-            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore();
-            RoleManager<IdentityRole> manager = CreateRoleManager();
+            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore(true);
+            RoleManager<IdentityRole> manager = CreateRoleManager(true);
             string roleNew = string.Format("{0}_TestRole", Guid.NewGuid());
 
             var role = new IdentityRole(roleNew);
@@ -224,8 +224,8 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
         [TestCategory("RoleStore.Role")]
         public void DeleteRole()
         {
-            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore();
-            RoleManager<IdentityRole> manager = CreateRoleManager();
+            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore(true);
+            RoleManager<IdentityRole> manager = CreateRoleManager(true);
             string roleNew = string.Format("TestRole_{0}", Guid.NewGuid());
             var role = new IdentityRole(roleNew);
             var createTask = manager.CreateAsync(role);
@@ -247,8 +247,8 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
         [TestCategory("RoleStore.Role")]
         public void FindRoleById()
         {
-            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore();
-            RoleManager<IdentityRole> manager = CreateRoleManager();
+            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore(true);
+            RoleManager<IdentityRole> manager = CreateRoleManager(true);
             DateTime start = DateTime.UtcNow;
             var role = CreateRoleHelper(manager);
             var findTask = manager.FindByIdAsync(role.Id);
@@ -265,7 +265,7 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
         [TestCategory("RoleStore.Role")]
         public void FindRoleByName()
         {
-            RoleManager<IdentityRole> manager = CreateRoleManager();
+            RoleManager<IdentityRole> manager = CreateRoleManager(true);
 
             var role = CreateRoleHelper(manager);
             DateTime start = DateTime.UtcNow;

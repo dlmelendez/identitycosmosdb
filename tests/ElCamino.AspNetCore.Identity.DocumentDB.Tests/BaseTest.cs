@@ -46,15 +46,26 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
         }
         #endregion
 
-        protected static IdentityBuilder Builder;
         protected static IServiceProvider Provider;
+        protected static IServiceProvider RoleProvider;
+
         static BaseTest()
         {
-            Builder = new IdentityBuilder(typeof(TUser), typeof(TRole), new ServiceCollection());
-            Builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            Provider = SetProvider(false);
+            RoleProvider = SetProvider(true);
+        }
+
+        private static IServiceProvider GetProvider(bool includeRoles)
+        {
+            return includeRoles ? RoleProvider : Provider;
+        }
+            
+        private static IServiceProvider SetProvider(bool includeRoles)
+        {
+            IdentityBuilder builder = new IdentityBuilder(typeof(TUser), typeof(TRole), new ServiceCollection());
+            builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             // Add Identity services to the services container.
-            Builder.Services.AddIdentity<TUser, TRole>(
-            (config) =>
+            void options(IdentityOptions config)
             {
                 config.Lockout = new LockoutOptions() { MaxFailedAccessAttempts = 2 };
                 config.Password.RequireDigit = false;
@@ -62,12 +73,23 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
                 config.Password.RequireLowercase = false;
                 config.Password.RequireNonAlphanumeric = false;
                 config.Password.RequireUppercase = false;
-            })
-            .AddDocumentDBStores<TContext>(() => GetConfig())
-            .AddDefaultTokenProviders();
-            Builder.Services.AddLogging();
+            }
 
-            Provider = Builder.Services.BuildServiceProvider();
+            if (includeRoles)
+            {
+                builder.Services.AddIdentity<TUser, TRole>(options);
+            }
+            else
+            {
+                builder.Services.AddIdentityCore<TUser>(options);
+            }
+            
+            builder.AddDocumentDBStores<TContext>(() => GetConfig())
+            .AddDefaultTokenProviders();
+            builder.Services.AddDataProtection();
+            builder.Services.AddLogging();
+
+            return builder.Services.BuildServiceProvider();
         }
 
         public static IdentityConfiguration GetConfig()
@@ -95,9 +117,9 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         public IdentityCloudContext GetContext() => new IdentityCloudContext(GetConfig());
 
-        public RoleStore<TRole, TContext> CreateRoleStore()
+        public RoleStore<TRole, TContext> CreateRoleStore(bool includeRoles)
         {
-            var temp = Provider.GetRequiredService<IRoleStore<TRole>>();
+            var temp = GetProvider(includeRoles).GetRequiredService<IRoleStore<TRole>>();
             return temp as RoleStore<TRole, TContext>;
         }
 
@@ -106,9 +128,9 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
         //    return new RoleStore<TRole>(context);
         //}
 
-        public RoleManager<TRole> CreateRoleManager()
+        public RoleManager<TRole> CreateRoleManager(bool includeRoles)
         {
-            return Provider.GetRequiredService<RoleManager<TRole>>();
+            return GetProvider(includeRoles).GetService<RoleManager<TRole>>();
         }
 
         //public RoleManager<TRole> CreateRoleManager(TContext context)
@@ -122,9 +144,9 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
         //}
 
 
-        public UserStore<TUser, TRole, TContext> CreateUserStore()
+        public UserStore<TUser, TRole, TContext> CreateUserStore(bool includeRoles)
         {
-            var temp = Provider.GetRequiredService<IUserStore<TUser>>();
+            var temp = GetProvider(includeRoles).GetRequiredService<IUserStore<TUser>>();
             return temp as UserStore<TUser, TRole, TContext>;
         }
 
@@ -133,9 +155,9 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
         //    return new UserStore<TUser>(context);
         //}
 
-        public UserManager<TUser> CreateUserManager()
+        public UserManager<TUser> CreateUserManager(bool includeRoles)
         {
-            return Provider.GetRequiredService<UserManager<TUser>>();
+            return GetProvider(includeRoles).GetRequiredService<UserManager<TUser>>();
         }
 
         //public UserManager<TUser> CreateUserManager(TContext context)

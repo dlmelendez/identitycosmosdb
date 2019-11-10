@@ -21,10 +21,13 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
     {
         [TestMethod]
         [TestCategory("UserStore.Properties")]
-        public void AccessFailedCount()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void AccessFailedCount(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager(); var user = CreateTestUser<ApplicationUser>();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
+            var user = CreateTestUser<ApplicationUser>(includeRoles);
             var taskUser = manager.GetAccessFailedCountAsync(user);
 
             taskUser.Wait();
@@ -89,10 +92,13 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.Properties")]
-        public void EmailNone()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void EmailNone(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager(); var user = CreateTestUser<ApplicationUser>(false, false);
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
+            var user = CreateTestUser<ApplicationUser>(false, false);
             string strNewEmail = string.Format("{0}@hotmail.com", Guid.NewGuid().ToString("N"));
             SetValidateEmail(manager, store, user, strNewEmail);
 
@@ -102,10 +108,13 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.Properties")]
-        public void Email()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void Email(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager(); var user = CurrentUser;
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
+            var user = CurrentUser(includeRoles);
 
             string strNewEmail = string.Format("{0}@gmail.com", Guid.NewGuid().ToString("N"));
             SetValidateEmail(manager, store, user, strNewEmail);
@@ -119,11 +128,13 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.Properties")]
-        public void EmailConfirmed()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void EmailConfirmed(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
-            var user = CreateTestUser<ApplicationUser>();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
+            var user = CreateTestUser<ApplicationUser>(includeRoles);
 
 
             var taskUserSet = manager.GenerateEmailConfirmationTokenAsync(user);
@@ -154,11 +165,13 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.Properties")]
-        public void LockoutEnabled()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void LockoutEnabled(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
-            var user = CurrentUser;
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
+            var user = CurrentUser(includeRoles);
 
             var taskLockoutSet = manager.SetLockoutEnabledAsync(user, true);
 
@@ -210,10 +223,13 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.Properties")]
-        public void PhoneNumber()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void PhoneNumber(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager(); var user = CurrentUser;
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
+            var user = CurrentUser(includeRoles);
 
             string strNewPhoneNumber = "542-887-3434";
 
@@ -235,10 +251,13 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.Properties")]
-        public void PhoneNumberConfirmed()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void PhoneNumberConfirmed(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager(); var user = CreateTestUser<ApplicationUser>();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
+            var user = CreateTestUser<ApplicationUser>(includeRoles);
             string strNewPhoneNumber = "425-555-1111";
 
             var taskUserSet = manager.GenerateChangePhoneNumberTokenAsync(user, strNewPhoneNumber);
@@ -269,11 +288,13 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.Properties")]
-        public void TwoFactorEnabled()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void TwoFactorEnabled(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
-            var user = CurrentUser;
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
+            var user = CurrentUser(includeRoles);
 
             bool twoFactorEnabled = true;
 
@@ -294,10 +315,13 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.Properties")]
-        public void PasswordHash()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void PasswordHash(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager(); var user = CurrentUser;
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
+            var user = CurrentUser(includeRoles);
             string passwordPlain = Guid.NewGuid().ToString("N");
 
             string passwordHash = new PasswordHasher<ApplicationUser>().HashPassword(user, passwordPlain);
@@ -325,10 +349,12 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.Properties")]
-        public void UsersProperty()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void UsersProperty(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
             DateTime start = DateTime.UtcNow;
             var list = manager.Users.ToList();
 
@@ -339,7 +365,7 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
             Console.WriteLine("");
 
             string email = "A" + Guid.NewGuid().ToString() + "@gmail.com";
-            CreateTestUser<ApplicationUser>(true, true, email);
+            CreateTestUser<ApplicationUser>(includeRoles, true, true, email);
 
             DateTime start3 = DateTime.UtcNow;
             var list3 = manager.Users.Where(w=> w.Email != null).Select(s => s.Email).ToList();
@@ -409,10 +435,13 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.Properties")]
-        public void SecurityStamp()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void SecurityStamp(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager(); var user = CreateTestUser<ApplicationUser>();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
+            var user = CreateTestUser<ApplicationUser>(includeRoles);
 
             var taskUser = manager.GetSecurityStampAsync(user);
 

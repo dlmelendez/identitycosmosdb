@@ -23,14 +23,31 @@ using System.Collections.Concurrent;
 
 namespace ElCamino.AspNetCore.Identity.DocumentDB
 {
-    
 
     /// <summary>
     /// Represents a new instance of a persistence store for the specified user and role types.
     /// </summary>
     /// <typeparam name="TUser">The type representing a user.</typeparam>
-    /// <typeparam name="TRole">The type representing a role.</typeparam>
     /// <typeparam name="TContext">The type of the data context class used to access the store.</typeparam>
+    public class UserStore<TUser, TContext>
+        : UserStore<TUser, Model.IdentityRole<string>, TContext>
+        where TUser : Model.IdentityUser<string>, new()
+        where TContext : IdentityCloudContext
+    {
+        /// <summary>
+        /// Constructs a new instance of <see cref="UserStore{TUser, TContext}"/>.
+        /// </summary>
+        /// <param name="context">The <see cref="IdentityCloudContext"/>.</param>
+        /// <param name="describer">The <see cref="IdentityErrorDescriber"/>.</param>
+        public UserStore(TContext context, IdentityErrorDescriber describer = null) : base(context, describer) { }
+
+    }
+    /// <summary>
+    /// Represents a new instance of a persistence store for the specified user and role types.
+    /// </summary>
+    /// <typeparam name="TUser">The type representing a user.</typeparam>
+    /// <typeparam name="TRole">The type representing a role.</typeparam>
+    /// <typeparam name="TContext">The type of the data context class used to access the store.</typeparam>   
     public class UserStore<TUser, TRole, TContext> 
         : UserStore<TUser, TRole, TContext, string, Model.IdentityUserClaim<string>, Model.IdentityUserRole<string>, Model.IdentityUserLogin<string>, Model.IdentityUserToken<string>, Model.IdentityRoleClaim<string>>
         where TUser : Model.IdentityUser<string>, new()
@@ -152,8 +169,8 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB
             {
                 throw new InvalidOperationException(String.Format(CultureInfo.CurrentCulture, Resources.RoleNotFound, normalizedRoleName));
             }
-            //UserRoles.Add(CreateUserRole(user, roleEntity));
             user.Roles.Add(CreateUserRole(user, roleEntity));
+
         }
 
         protected override Model.IdentityUserRole<string> CreateUserRole(TUser user, TRole role)

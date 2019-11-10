@@ -29,7 +29,7 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 #endregion
 
         private ApplicationUser currentUser = null;
-        private ApplicationUser currentEmailUser = null;
+        private ApplicationUser currentRoleUser = null;
 
         private TestContext testContextInstance;
         /// <summary>
@@ -48,41 +48,39 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
             }
         }
 
-        public ApplicationUser CurrentUser
+        public ApplicationUser CurrentUser(bool includeRoles)
         {
-            get
+            if (!includeRoles)
             {
-                if(currentUser == null)
+                if (currentUser == null)
                 {
                     lock (objectLock)
                     {
                         if (currentUser == null)
                         {
-                            currentUser = CreateUser<ApplicationUser>();
+                            currentUser = CreateUser<ApplicationUser>(includeRoles);
                         }
                     }
                 }
                 return currentUser;
             }
-        }
-        public ApplicationUser CurrentEmailUser
-        {
-            get
+            else
             {
-                if (currentEmailUser == null)
+                if (currentRoleUser == null)
                 {
                     lock (objectLock)
                     {
-                        if (currentEmailUser == null)
+                        if (currentRoleUser == null)
                         {
-                            currentEmailUser = CreateUser<ApplicationUser>();
+                            currentRoleUser = CreateUser<ApplicationUser>(includeRoles);
                         }
                     }
                 }
-
-                return currentEmailUser;
+                return currentRoleUser;
             }
+
         }
+        
 
 
 
@@ -160,10 +158,12 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void CheckDupUser()
+        [DataRow(true, DisplayName ="IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void CheckDupUser(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GenTestUser();
             var user2 = GenTestUser();
@@ -200,22 +200,24 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void CreateUserTest()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void CreateUserTest(bool includeRoles)
         {
-            WriteLineObject(CreateTestUser<ApplicationUser>());
+            WriteLineObject(CreateTestUser<ApplicationUser>(includeRoles));
         }
 
-        public T CreateUser<T>() where T : IdentityUser, new()
+        public T CreateUser<T>(bool includeRoles) where T : IdentityUser, new()
         {
-            return CreateTestUser<T>();
+            return CreateTestUser<T>(includeRoles);
         }
 
-        private T CreateTestUser<T>(bool createPassword = true, bool createEmail = true,
+        private T CreateTestUser<T>(bool includeRoles, bool createPassword = true, bool createEmail = true,
             string emailAddress = null) where T : IdentityUser, new()
         {
 
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GenTestUser();
             if (!createEmail)
@@ -238,9 +240,12 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
             for (int i = 0; i < 1; i++)
             {
-                AddUserClaimHelper(user, GenAdminClaim());
-                AddUserLoginHelper(user, GenGoogleLogin());
-                AddUserRoleHelper(user, string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N")));
+                AddUserClaimHelper(user, GenAdminClaim(), includeRoles);
+                AddUserLoginHelper(user, GenGoogleLogin(), includeRoles);
+                if (includeRoles)
+                {
+                    AddUserRoleHelper(user, string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N")), includeRoles);
+                }
             }
 
             AssertInnerExceptionType<AggregateException, ArgumentException>(() => store.CreateAsync(null).Wait());
@@ -250,10 +255,10 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
             return getUserTask.Result as T;
         }
 
-        private async Task<ApplicationUser> CreateTestUserLite(bool createPassword = true, bool createEmail = true,
+        private async Task<ApplicationUser> CreateTestUserLite(bool includeRoles, bool createPassword = true, bool createEmail = true,
             string emailAddress = null)
         {
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GenTestUser();
             if (!createEmail)
@@ -276,10 +281,13 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
             List<Claim> lClaims = new List<Claim>();
             for (int i = 0; i < 2; i++)
             {
-                string roleName = string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N"));
-                var identityRole = CreateRoleIfNotExists(roleName);
+                if (includeRoles)
+                {
+                    string roleName = string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N"));
+                    var identityRole = CreateRoleIfNotExists(includeRoles, roleName);
 
-                await manager.AddToRoleAsync(user, roleName);
+                    await manager.AddToRoleAsync(user, roleName);
+                }
                 await manager.AddLoginAsync(user, GenGoogleLogin());
                 lClaims.Add(GenAdminClaim());
             }
@@ -292,10 +300,12 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void DeleteUser()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void DeleteUser(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GenTestUser();
 
@@ -307,9 +317,12 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
             for (int i = 0; i < 7; i++)
             {
-                AddUserClaimHelper(user, GenAdminClaim());
-                AddUserLoginHelper(user, GenGoogleLogin());
-                AddUserRoleHelper(user, string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N")));
+                AddUserClaimHelper(user, GenAdminClaim(), includeRoles);
+                AddUserLoginHelper(user, GenGoogleLogin(), includeRoles);
+                if (includeRoles)
+                {
+                    AddUserRoleHelper(user, string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N")), includeRoles);
+                }
             }
 
             var findUserTask2 = manager.FindByIdAsync(user.Id);
@@ -337,10 +350,12 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void UpdateApplicationUser()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void UpdateApplicationUser(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GetTestAppUser();
             WriteLineObject<ApplicationUser>(user);
@@ -375,10 +390,12 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void UpdateUser()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void UpdateUser(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GenTestUser();
             WriteLineObject<IdentityUser>(user);
@@ -398,12 +415,14 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void ChangeUserName()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void ChangeUserName(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var firstUser = CreateTestUser<ApplicationUser>();
+            var firstUser = CreateTestUser<ApplicationUser>(includeRoles);
             Console.WriteLine("{0}", "Original User");
             WriteLineObject(firstUser);
             string originalPlainUserName = firstUser.UserName;
@@ -464,12 +483,14 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void FindUserByEmail()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void FindUserByEmail(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var user = CreateUser<ApplicationUser>();
+            var user = CreateUser<ApplicationUser>(includeRoles);
             WriteLineObject<IdentityUser>(user);
 
             DateTime start = DateTime.UtcNow;
@@ -482,17 +503,19 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void FindUsersByEmail()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void FindUsersByEmail(bool includeRoles)
         {
             string strEmail = Guid.NewGuid().ToString() + "@live.com";
 
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             int createdCount = 11;
             for (int i = 0; i < createdCount; i++)
             {
-                var task = CreateTestUserLite(true, true, strEmail);
+                var task = CreateTestUserLite(includeRoles, true, true, strEmail);
                 task.Wait();
             }
 
@@ -532,12 +555,14 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void FindUserById()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void FindUserById(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var user = CurrentUser;
+            var user = CurrentUser(includeRoles);
             DateTime start = DateTime.UtcNow;
             var findUserTask = manager.FindByIdAsync(user.Id);
             findUserTask.Wait();
@@ -548,12 +573,14 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void FindUserByName()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void FindUserByName(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var user = CurrentUser;
+            var user = CurrentUser(includeRoles);
             WriteLineObject<IdentityUser>(user);
             DateTime start = DateTime.UtcNow;
             var findUserTask = manager.FindByNameAsync(user.UserName);
@@ -565,17 +592,19 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void AddUserLogin()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void AddUserLogin(bool includeRoles)
         {
-            var user = CreateTestUser<ApplicationUser>(false);
+            var user = CreateTestUser<ApplicationUser>(includeRoles, false);
             WriteLineObject(user);
-            AddUserLoginHelper(user, GenGoogleLogin());
+            AddUserLoginHelper(user, GenGoogleLogin(), includeRoles);
         }
 
-        public void AddUserLoginHelper(ApplicationUser user, UserLoginInfo loginInfo)
+        public void AddUserLoginHelper(ApplicationUser user, UserLoginInfo loginInfo, bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
 
             var userAddLoginTask = manager.AddLoginAsync(user, loginInfo);
@@ -601,10 +630,12 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void AddRemoveUserToken()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void AddRemoveUserToken(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GenTestUser();
             WriteLineObject<IdentityUser>(user);
@@ -654,10 +685,13 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void AddRemoveUserLogin()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+
+        public void AddRemoveUserLogin(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GenTestUser();
             WriteLineObject<IdentityUser>(user);
@@ -722,26 +756,28 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void AddUserRole()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        public void AddUserRole(bool includeRoles)
         {
             string strUserRole = string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N"));
-            WriteLineObject<IdentityUser>(CurrentUser);
-            AddUserRoleHelper(CurrentUser, strUserRole);
+            WriteLineObject<IdentityUser>(CurrentUser(includeRoles));
+            AddUserRoleHelper(CurrentUser(includeRoles), strUserRole, includeRoles);
         }
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void GetUsersByRole()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        public void GetUsersByRole(bool includeRoles)
         {
             string strUserRole = string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N"));
-            var identityRole = CreateRoleIfNotExists(strUserRole);
+            var identityRole = CreateRoleIfNotExists(includeRoles, strUserRole);
 
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
             int userCount = 4;
             DateTime start2 = DateTime.UtcNow;
             ApplicationUser tempUser = null;
-            IdentityRole role = CreateRoleIfNotExists(strUserRole);
+            IdentityRole role = CreateRoleIfNotExists(includeRoles, strUserRole);
             Console.WriteLine($"RoleId: {role.Id}");
             for (int i = 0; i < userCount; i++)
             {
@@ -749,7 +785,7 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
                 Console.WriteLine("CreateTestUserLite()");
                 tempUser = CreateTestUserLite(true, true).Result;
                 Console.WriteLine("CreateTestUserLite(): {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
-                AddUserRoleHelper(tempUser, strUserRole);
+                AddUserRoleHelper(tempUser, strUserRole, includeRoles);
             }
             Console.WriteLine("GenerateUsers(): {0} user count", userCount);
             Console.WriteLine("GenerateUsers(): {0} seconds", (DateTime.UtcNow - start2).TotalSeconds);
@@ -761,9 +797,9 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
             Assert.AreEqual(users.Where(u => u.Roles.Any(r=> r.RoleId == role.Id)).Count(), userCount);
         }
 
-        private IdentityRole CreateRoleIfNotExists(string roleName)
+        private IdentityRole CreateRoleIfNotExists(bool includeRoles, string roleName)
         {
-            var rmanager = CreateRoleManager();
+            var rmanager = CreateRoleManager(includeRoles);
 
             var userRole = rmanager.FindByNameAsync(roleName);
             userRole.Wait();
@@ -778,13 +814,13 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
             return role;
         }
 
-        public IdentityRole AddUserRoleHelper(ApplicationUser user, string roleName)
+        public IdentityRole AddUserRoleHelper(ApplicationUser user, string roleName, bool includeRoles)
         {
-            var identityRole = CreateRoleIfNotExists(roleName);
+            var identityRole = CreateRoleIfNotExists(includeRoles, roleName);
             Console.WriteLine($"RoleId: {identityRole.Id}");
 
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var userRoleTask = manager.AddToRoleAsync(user, roleName);
 
@@ -800,15 +836,16 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void AddRemoveUserRole()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        public void AddRemoveUserRole(bool includeRoles)
         {
             string roleName = string.Format("{0}_{1}", Constants.AccountRoles.AccountTestAdminRole, Guid.NewGuid().ToString("N"));
             
-            var adminRole = CreateRoleIfNotExists(roleName);
+            var adminRole = CreateRoleIfNotExists(includeRoles, roleName);
 
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
-            var user = CurrentUser;
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
+            var user = CurrentUser(includeRoles);
             user = manager.FindByIdAsync(user.Id).Result;
             WriteLineObject(user);
             var userRoleTask = manager.AddToRoleAsync(user, roleName);
@@ -862,16 +899,17 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void IsUserInRole()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        public void IsUserInRole(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var user = CurrentUser;
+            var user = CurrentUser(includeRoles);
             WriteLineObject(user);
             string roleName = string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N"));
 
-            AddUserRoleHelper(user, roleName);
+            AddUserRoleHelper(user, roleName, includeRoles);
 
             DateTime start = DateTime.UtcNow;
 
@@ -888,10 +926,13 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public async Task GenerateUsers()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+
+        public async Task GenerateUsers(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             int userCount = 10;
             DateTime start2 = DateTime.UtcNow;
@@ -899,7 +940,7 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
             {
                 DateTime start = DateTime.UtcNow;
                 Console.WriteLine("CreateTestUserLite()");
-                await CreateTestUserLite(true, true);
+                await CreateTestUserLite(includeRoles, true, true);
                 Console.WriteLine("CreateTestUserLite(): {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
             }
             Console.WriteLine("GenerateUsers(): {0} user count", userCount);
@@ -909,16 +950,18 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void AddUserClaim()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void AddUserClaim(bool includeRoles)
         {
-            WriteLineObject<IdentityUser>(CurrentUser);
-            AddUserClaimHelper(CurrentUser, GenUserClaim());
+            WriteLineObject<IdentityUser>(CurrentUser(includeRoles));
+            AddUserClaimHelper(CurrentUser(includeRoles), GenUserClaim(), includeRoles);
         }
 
-        private void AddUserClaimHelper(ApplicationUser user, Claim claim)
+        private void AddUserClaimHelper(ApplicationUser user, Claim claim, bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
 
             var userClaimTask = manager.AddClaimAsync(user, claim);
@@ -933,11 +976,13 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void GetUsersByClaim()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void GetUsersByClaim(bool includeRoles)
         {
             var claim = GenUserClaim();
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             int userCount = 5;
             DateTime start2 = DateTime.UtcNow;
@@ -948,7 +993,7 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
                 Console.WriteLine("CreateTestUserLite()");
                 tempUser = CreateTestUserLite(true, true).Result;
                 Console.WriteLine("CreateTestUserLite(): {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
-                AddUserClaimHelper(tempUser, claim);
+                AddUserClaimHelper(tempUser, claim, includeRoles);
             }
             Console.WriteLine("GenerateUsers(): {0} user count", userCount);
             Console.WriteLine("GenerateUsers(): {0} seconds", (DateTime.UtcNow - start2).TotalSeconds);
@@ -962,12 +1007,14 @@ namespace ElCamino.AspNetCore.Identity.DocumentDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void AddRemoveUserClaim()
+        [DataRow(true, DisplayName = "IncludeRoleProvider")]
+        [DataRow(false, DisplayName = "NoRoleProvider")]
+        public void AddRemoveUserClaim(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore();
-            UserManager<ApplicationUser> manager = CreateUserManager();
+            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var user = CurrentUser;
+            var user = CurrentUser(includeRoles);
             WriteLineObject<IdentityUser>(user);
             Claim claim = GenAdminClaim();
 
