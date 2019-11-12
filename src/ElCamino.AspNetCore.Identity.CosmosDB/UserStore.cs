@@ -75,18 +75,27 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 "FROM u " +
                 "JOIN r in u.roles " +
                 "WHERE (u.id = @userid) ").WithParameter("@userid", userId);
+#if !NETSTANDARD2_1
 
             List<String> lroleIds =  await (await ExecuteSqlQuery<String>(query, Context.QueryOptions)
                                             .ConfigureAwait(false))
                                             .ToListAsync(cancellationToken: cancellationToken);
+#else
+            List<String> lroleIds =  await ExecuteSqlQuery<String>(query, Context.QueryOptions)
+                                            .ToListAsync(cancellationToken: cancellationToken);
 
+#endif
             if (lroleIds.Count > 0)
             {
                 QueryDefinition query2 = new QueryDefinition(string.Format("SELECT VALUE r.name " +
                     "FROM r " +
                     "WHERE (r.id in ( {0} )) ", string.Join(",", lroleIds.Select(rn => "'" + rn + "'"))));
-
+#if !NETSTANDARD2_1
                 return await (await ExecuteSqlQuery<String>(query2, Context.QueryOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
+#else
+                return await ExecuteSqlQuery<String>(query2, Context.QueryOptions)
+                    .ToListAsync(cancellationToken: cancellationToken);
+#endif
             }
 
             return new List<String>();
@@ -109,7 +118,12 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@claimType", claim.Type);
 
             Debug.WriteLine(query.QueryText);
+#if !NETSTANDARD2_1
             return await (await ExecuteSqlQuery<TUser>(query, Context.QueryOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
+#else
+            return await ExecuteSqlQuery<TUser>(query, Context.QueryOptions)
+                .ToListAsync(cancellationToken: cancellationToken);
+#endif
         }
 
 
@@ -140,7 +154,12 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                     .WithParameter("@roleId", roleId);
 
                 Debug.WriteLine(query.QueryText);
+#if !NETSTANDARD2_1
                 return await (await ExecuteSqlQuery<TUser>(query, Context.QueryOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
+#else
+                return await ExecuteSqlQuery<TUser>(query, Context.QueryOptions)
+                                .ToListAsync(cancellationToken: cancellationToken);
+#endif
             }
             return new List<TUser>();
         }
@@ -187,9 +206,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                             .WithParameter("@normalizedName", normalizedRoleName);
 
             Console.WriteLine(roleQuery.QueryText);
+#if !NETSTANDARD2_1
             var roles = await (await ExecuteSqlQuery<TRole>(roleQuery, Context.QueryOptions)
                         .ConfigureAwait(false))
                         .ToListAsync(cancellationToken: cancellationToken);
+#else
+            var roles = await ExecuteSqlQuery<TRole>(roleQuery, Context.QueryOptions)
+                        .ToListAsync(cancellationToken: cancellationToken);
+#endif
             return roles.FirstOrDefault();
         }
 
@@ -367,9 +391,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// </summary>
         public TContext Context { get; private set; }
 
-
+#if NETSTANDARD2_1
+        internal protected async IAsyncEnumerable<Q> ExecuteSqlQuery<Q>(QueryDefinition sqlQuery, QueryRequestOptions queryOptions = null) where Q : class
+#else
         internal protected async Task<IEnumerable<Q>> ExecuteSqlQuery<Q>(QueryDefinition sqlQuery, QueryRequestOptions queryOptions = null) where Q : class
+
+#endif
         {
+
 #if !NETSTANDARD2_1
             List<Q> results = new List<Q>();
 #endif
@@ -667,7 +696,12 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@normalizedName", normalizedRoleName);
 
             Console.WriteLine(roleQuery.QueryText);
+#if !NETSTANDARD2_1
             var roleIds = await (await ExecuteSqlQuery<String>(roleQuery, Context.QueryOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
+#else
+            var roleIds = await ExecuteSqlQuery<String>(roleQuery, Context.QueryOptions)
+                .ToListAsync(cancellationToken: cancellationToken);
+#endif
             return roleIds.FirstOrDefault();
         }
 
@@ -912,9 +946,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@normalizedEmail", normalizedEmail);
 
             Console.WriteLine(query.QueryText);
+#if !NETSTANDARD2_1
             return await (await ExecuteSqlQuery<TUser>(query, Context.QueryOptions)
                                 .ConfigureAwait(false))
                                 .ToListAsync(cancellationToken: cancellationToken);
+#else
+            return await ExecuteSqlQuery<TUser>(query, Context.QueryOptions)
+                                .ToListAsync(cancellationToken: cancellationToken);
+#endif
         }
 
     }

@@ -4,7 +4,7 @@
     <Copyright>Copyright © 2019 David Melendez, MIT License</Copyright>
     <AssemblyTitle>Azure CosmosDB Provider for ASP.NET Identity Core</AssemblyTitle>
     <Authors>David Melendez</Authors>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
     <AssemblyName>ElCamino.AspNetCore.Identity.CosmosDB</AssemblyName>
     <AssemblyOriginatorKeyFile>../../tools/Key.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
