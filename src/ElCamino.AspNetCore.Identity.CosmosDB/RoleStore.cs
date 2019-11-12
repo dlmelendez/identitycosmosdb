@@ -45,7 +45,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             }
         }
 
-        public virtual IQueryable<Model.IdentityRoleClaim<string>> RoleClaims
+        public override IQueryable<Model.IdentityRoleClaim<string>> RoleClaims
         {
             get
             {
