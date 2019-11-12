@@ -1,6 +1,7 @@
 // MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 
-using Microsoft.Azure.Documents;
+using ElCamino.AspNetCore.Identity.CosmosDB.Helpers;
+using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;
@@ -40,24 +41,25 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Model
         }
 
         [JsonProperty(PropertyName = "id")]
-        public override TKey Id { get => base.Id; set => base.Id = value; }
+        public override TKey Id 
+        { 
+            get => base.Id;
+            set
+            {
+                base.Id = value;
+                SetPartitionKey();
+            }
+        }
 
-        [JsonProperty(PropertyName = "_rid")]
-        public virtual string ResourceId { get; set; }
-
-        [JsonProperty(PropertyName = "_self")]
-        public virtual string SelfLink { get; set; }
-
-        [JsonIgnore]
-        public string AltLink { get; set; }
-
-        [JsonConverter(typeof(UnixDateTimeConverter))]
-        [JsonProperty(PropertyName = "_ts")]
-        public virtual DateTime Timestamp { get; set; }
+        public virtual void SetPartitionKey()
+        {
+            PartitionKey = PartitionKeyHelper.GetPartitionKeyFromId(Id?.ToString());
+        }
 
         [JsonProperty(PropertyName = "_etag")]
         public virtual string ETag { get; set; }
 
+        public virtual string PartitionKey { get; set; }
 
         [JsonProperty("userName")]
         public override string UserName { get; set; }

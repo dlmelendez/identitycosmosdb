@@ -8,12 +8,11 @@ using Microsoft.AspNetCore.Identity;
 using System.Net;
 using System.Diagnostics;
 using ElCamino.AspNetCore.Identity.CosmosDB.Model;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Linq;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Azure.Cosmos.Linq;
 using Newtonsoft.Json;
 using System.Threading;
 using ElCamino.AspNetCore.Identity.CosmosDB.Extensions;
-using System.ComponentModel;
 using System.Security.Claims;
 using ElCamino.AspNetCore.Identity.CosmosDB.Helpers;
 
@@ -38,10 +37,21 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="describer">The <see cref="IdentityErrorDescriber"/>.</param>
         public RoleStore(TContext context, IdentityErrorDescriber describer = null) : base(context, describer) { }
 
-        public override IQueryable<TRole> Roles => Context.Client.CreateDocumentQuery<TRole>(Context.IdentityDocumentCollection.DocumentsLink);
+        public override IQueryable<TRole> Roles
+        {
+            get
+            {
+                return Context.IdentityContainer.GetItemLinqQueryable<TRole>(true);
+            }
+        }
 
-        public override IQueryable<Model.IdentityRoleClaim<string>> RoleClaims => Context.Client.CreateDocumentQuery<Model.IdentityRoleClaim<string>>(Context.IdentityDocumentCollection.DocumentsLink);
-
+        public virtual IQueryable<Model.IdentityRoleClaim<string>> RoleClaims
+        {
+            get
+            {
+                return Context.IdentityContainer.GetItemLinqQueryable<Model.IdentityRoleClaim<string>>(true);
+            }
+        }
 
         public override async Task<IList<Claim>> GetClaimsAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -78,10 +88,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             role.Claims.Add(CreateRoleClaim(role, claim));
             return TaskCacheExtensions.CompletedTask;
-        }
-
-
-        
+        }        
 
     }
 
@@ -94,12 +101,12 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         where TRoleClaim : Model.IdentityRoleClaim<TKey>, new()
     {
         private bool _disposed;
-        private DocumentCollection _roleTable;
+        private Container _roleTable;
 
         public RoleStore(TContext context, IdentityErrorDescriber describer = null) : base(describer)
         {
             Context = context ?? throw new ArgumentNullException(nameof(context));
-            _roleTable = context.IdentityDocumentCollection;
+            _roleTable = context.IdentityContainer;
 
         }
 
@@ -112,10 +119,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 throw new ArgumentNullException(nameof(role));
             }
 
-            var doc = await Context.Client.CreateDocumentAsync(Context.IdentityDocumentCollection.DocumentsLink, role
-                        , Context.RequestOptions, true);
-            Context.SetSessionTokenIfEmpty(doc.SessionToken);
-            role = JsonHelpers.CreateObject<TRole>(doc);
+            var doc = await Context.IdentityContainer.CreateItemAsync<TRole>(role, new PartitionKey(role.PartitionKey), Context.RequestOptions);
+            Context.SetSessionTokenIfEmpty(doc.Headers.Session);
             return IdentityResult.Success;
         }
 
@@ -129,9 +134,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             }
 
             role.ConcurrencyStamp = Guid.NewGuid().ToString();
-            var doc = await Context.Client.UpsertDocumentAsync(Context.IdentityDocumentCollection.DocumentsLink, role, Context.RequestOptions,
-                disableAutomaticIdGeneration: true);
-            Context.SetSessionTokenIfEmpty(doc.SessionToken);
+            var doc = await Context.IdentityContainer.UpsertItemAsync<TRole>(role, new PartitionKey(role.PartitionKey), Context.RequestOptions);
+            Context.SetSessionTokenIfEmpty(doc.Headers.Session);
             return IdentityResult.Success;
         }
 
@@ -143,9 +147,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             {
                 throw new ArgumentNullException(nameof(role));
             }
-            var doc = await Context.Client.DeleteDocumentAsync(role.SelfLink,
-                    Context.RequestOptions);
-            Context.SetSessionTokenIfEmpty(doc.SessionToken);
+            var doc = await Context.IdentityContainer.DeleteItemAsync<TRole>(role.Id.ToString(), new PartitionKey(role.PartitionKey), Context.RequestOptions);
+            Context.SetSessionTokenIfEmpty(doc.Headers.Session);
 
             return IdentityResult.Success;
         }
@@ -177,11 +180,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="id">The role ID to look for.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>A <see cref="Task{TResult}"/> that result of the look up.</returns>
-        public override async Task<TRole> FindByIdAsync(string id, CancellationToken cancellationToken = default(CancellationToken))
+        public override Task<TRole> FindByIdAsync(string id, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            return await Task.FromResult<TRole>(FindById(id));
+            return FindById(id);
         }
 
         /// <summary>
@@ -194,36 +197,43 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            SqlQuerySpec query = new SqlQuerySpec("SELECT * FROM Roles r WHERE (r.normalizedName = @normalizedName)", new SqlParameterCollection(){
-             new SqlParameter("@normalizedName", normalizedName)
-            });
 
-            var fo = Context.FeedOptions;
-            fo.MaxItemCount = 1;
-            var doc = Context.Client.CreateDocumentQuery(Context.IdentityDocumentCollection.DocumentsLink,
-                query, fo)
-            .ToList()
-            .FirstOrDefault();
+            QueryDefinition query = new QueryDefinition("SELECT * FROM Roles r WHERE (r.normalizedName = @normalizedName)")
+               .WithParameter("@normalizedName", normalizedName);
 
-            TRole role = doc;
-            return await Task.FromResult(role);
+            QueryRequestOptions options = Context.FeedOptions;
+            options.MaxItemCount = 1;
+            options.MaxBufferedItemCount = 1;
+            options.MaxConcurrency = 0; //max parallel               
+            
+
+            var feedIterator = Context.IdentityContainer.GetItemQueryIterator<TRole>(query, requestOptions:options);
+
+            if (feedIterator.HasMoreResults)
+            {
+                return (await feedIterator.ReadNextAsync()).FirstOrDefault();
+            }
+
+            return null;
         }
 
-        private TRole FindById(string roleKeyString)
+        private async Task<TRole> FindById(string roleKeyString)
         {
-            SqlQuerySpec query = new SqlQuerySpec("SELECT * FROM Roles r WHERE (r.id = @id)", new SqlParameterCollection(){
-             new SqlParameter("@id", roleKeyString)
-            });
+            try
+            {
+                var itemResponse = await Context.IdentityContainer.ReadItemAsync<TRole>(roleKeyString,
+                    new PartitionKey(PartitionKeyHelper.GetPartitionKeyFromId(roleKeyString)));
 
-            var fo = Context.FeedOptions;
-            fo.MaxItemCount = 1;
-            var doc = Context.Client.CreateDocumentQuery(Context.IdentityDocumentCollection.DocumentsLink,
-                query, fo)
-            .ToList()
-            .FirstOrDefault();
-
-            TRole role = doc;
-            return role;
+                return itemResponse.Resource;
+            }
+            catch (CosmosException ex)
+            {
+                if (ex.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return null;
+                }
+                throw;
+            }
         }
 
 
@@ -262,10 +272,21 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         public TContext Context { get; private set; }
 
 
-        public override IQueryable<TRole> Roles => Context.Client.CreateDocumentQuery<TRole>(Context.IdentityDocumentCollection.DocumentsLink);
+        public override IQueryable<TRole> Roles
+        {
+            get
+            {
+                return Context.IdentityContainer.GetItemLinqQueryable<TRole>(true);
+            }
+        }
 
-        public virtual IQueryable<TRoleClaim> RoleClaims => Context.Client.CreateDocumentQuery<TRoleClaim>(Context.IdentityDocumentCollection.DocumentsLink);
+        public virtual IQueryable<TRoleClaim> RoleClaims
+        {
+            get
+            {
+                return Context.IdentityContainer.GetItemLinqQueryable<TRoleClaim>(true);
+            }
+        }
 
-       
     }
 }

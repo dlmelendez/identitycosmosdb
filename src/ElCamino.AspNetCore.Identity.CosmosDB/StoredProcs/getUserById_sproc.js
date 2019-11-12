@@ -12,7 +12,12 @@ function getUserById_v1(userid) {
         'SELECT * FROM root r WHERE r.id = "' + userid + '"',
         function (err, feed, options) {
             if (err) throw err;
-            getContext().getResponse().setBody(feed);
+            if (!feed || !feed.length) {
+                getContext().getResponse().setBody("");
+            }
+            else {
+                getContext().getResponse().setBody(JSON.stringify(feed[0]));
+            }
         });
 
 }

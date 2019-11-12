@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Identity;
 using ElCamino.AspNetCore.Identity.CosmosDB.Model;
 using Newtonsoft.Json;
 using System.Diagnostics;
-using Microsoft.Azure.Documents.Linq;
 using System.Linq;
 using System.Threading;
 using ElCamino.AspNetCore.Identity.CosmosDB.Tests.ModelTests;
@@ -48,7 +47,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             }
         }
 
-        public ApplicationUser CurrentUser(bool includeRoles)
+        public Task<ApplicationUser> CurrentUser(bool includeRoles)
         {
             if (!includeRoles)
             {
@@ -58,11 +57,13 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
                     {
                         if (currentUser == null)
                         {
-                            currentUser = CreateUser<ApplicationUser>(includeRoles);
+                            var task = CreateUser<ApplicationUser>(includeRoles);
+                            task.Wait();
+                            currentUser = task.Result;
                         }
                     }
                 }
-                return currentUser;
+                return Task.FromResult(currentUser);
             }
             else
             {
@@ -72,11 +73,13 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
                     {
                         if (currentRoleUser == null)
                         {
-                            currentRoleUser = CreateUser<ApplicationUser>(includeRoles);
+                            var task = CreateUser<ApplicationUser>(includeRoles);
+                            task.Wait();
+                            currentRoleUser = task.Result;
                         }
                     }
                 }
-                return currentRoleUser;
+                return Task.FromResult(currentRoleUser);
             }
 
         }
@@ -160,17 +163,17 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("UserStore.User")]
         [DataRow(true, DisplayName ="IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void CheckDupUser(bool includeRoles)
+        public async Task CheckDupUser(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GenTestUser();
             var user2 = GenTestUser();
-            var result1 = manager.CreateAsync(user).Result;
+            var result1 = await manager.CreateAsync(user);
             Assert.IsTrue(result1.Succeeded, string.Concat(result1.Errors.Select(e => e.Code)));
             user2.UserName = user.UserName;
-            var result2 = manager.CreateAsync(user2).Result;
+            var result2 = await manager.CreateAsync(user2);
             Assert.IsFalse(result2.Succeeded);
             Assert.IsTrue(new IdentityErrorDescriber().DuplicateUserName(user.UserName).Code
                 == result2.Errors.First().Code);
@@ -178,7 +181,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void CheckDupEmail()
+        public async Task CheckDupEmail()
         {
             IdentityOptions options = new IdentityOptions();
             options.User.RequireUniqueEmail = true;
@@ -187,11 +190,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
             var user = GenTestUser();
             var user2 = GenTestUser();
-            var result1 = manager.CreateAsync(user).Result;
+            var result1 = await manager.CreateAsync(user);
             Assert.IsTrue(result1.Succeeded, string.Concat(result1.Errors.Select(e => e.Code)));
 
             user2.Email = user.Email;
-            var result2 = manager.CreateAsync(user2).Result;
+            var result2 = await manager.CreateAsync(user2);
 
             Assert.IsFalse(result2.Succeeded);
             Assert.IsTrue(new IdentityErrorDescriber().DuplicateEmail(user.Email).Code
@@ -202,17 +205,17 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("UserStore.User")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void CreateUserTest(bool includeRoles)
+        public async Task CreateUserTest(bool includeRoles)
         {
-            WriteLineObject(CreateTestUser<ApplicationUser>(includeRoles));
+            WriteLineObject(await CreateTestUser<ApplicationUser>(includeRoles));
         }
 
-        public T CreateUser<T>(bool includeRoles) where T : IdentityUser, new()
+        public Task<T> CreateUser<T>(bool includeRoles) where T : IdentityUser, new()
         {
             return CreateTestUser<T>(includeRoles);
         }
 
-        private T CreateTestUser<T>(bool includeRoles, bool createPassword = true, bool createEmail = true,
+        private async Task<T> CreateTestUser<T>(bool includeRoles, bool createPassword = true, bool createEmail = true,
             string emailAddress = null) where T : IdentityUser, new()
         {
 
@@ -232,27 +235,24 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
                 }
             }
             var taskUser = createPassword ?
-                manager.CreateAsync(user, DefaultUserPassword) :
-                manager.CreateAsync(user);
-            taskUser.Wait();
-            Assert.IsTrue(taskUser.Result.Succeeded, string.Concat(taskUser.Result.Errors));
-            user = manager.FindByIdAsync(user.Id).Result;
+                await manager.CreateAsync(user, DefaultUserPassword) :
+                await manager.CreateAsync(user);
+            Assert.IsTrue(taskUser.Succeeded, string.Concat(taskUser.Errors));
+            user = await manager.FindByIdAsync(user.Id);
 
             for (int i = 0; i < 1; i++)
             {
-                AddUserClaimHelper(user, GenAdminClaim(), includeRoles);
-                AddUserLoginHelper(user, GenGoogleLogin(), includeRoles);
+                await AddUserClaimHelper(user, GenAdminClaim(), includeRoles);
+                await AddUserLoginHelper(user, GenGoogleLogin(), includeRoles);
                 if (includeRoles)
                 {
-                    AddUserRoleHelper(user, string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N")), includeRoles);
+                    await AddUserRoleHelper(user, string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N")), includeRoles);
                 }
             }
 
-            AssertInnerExceptionType<AggregateException, ArgumentException>(() => store.CreateAsync(null).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.CreateAsync(null));
 
-            var getUserTask = manager.FindByIdAsync(user.Id);
-            getUserTask.Wait();
-            return getUserTask.Result as T;
+            return  (await manager.FindByIdAsync(user.Id)) as T;
         }
 
         private async Task<ApplicationUser> CreateTestUserLite(bool includeRoles, bool createPassword = true, bool createEmail = true,
@@ -284,7 +284,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
                 if (includeRoles)
                 {
                     string roleName = string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N"));
-                    var identityRole = CreateRoleIfNotExists(includeRoles, roleName);
+                    await CreateRoleIfNotExists(includeRoles, roleName);
 
                     await manager.AddToRoleAsync(user, roleName);
                 }
@@ -302,48 +302,42 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("UserStore.User")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void DeleteUser(bool includeRoles)
+        public async Task DeleteUser(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GenTestUser();
 
-            var taskUser = manager.CreateAsync(user, DefaultUserPassword);
-            taskUser.Wait();
-            Assert.IsTrue(taskUser.Result.Succeeded, string.Concat(taskUser.Result.Errors));
+            var taskUser = await manager.CreateAsync(user, DefaultUserPassword);
+            Assert.IsTrue(taskUser.Succeeded, string.Concat(taskUser.Errors));
 
-            user = manager.FindByIdAsync(user.Id).Result;
+            user = await manager.FindByIdAsync(user.Id);
 
             for (int i = 0; i < 7; i++)
             {
-                AddUserClaimHelper(user, GenAdminClaim(), includeRoles);
-                AddUserLoginHelper(user, GenGoogleLogin(), includeRoles);
+                await AddUserClaimHelper(user, GenAdminClaim(), includeRoles);
+                await AddUserLoginHelper(user, GenGoogleLogin(), includeRoles);
                 if (includeRoles)
                 {
-                    AddUserRoleHelper(user, string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N")), includeRoles);
+                    await AddUserRoleHelper(user, string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N")), includeRoles);
                 }
             }
 
-            var findUserTask2 = manager.FindByIdAsync(user.Id);
-            findUserTask2.Wait();
-            user = findUserTask2.Result;
+            user = await manager.FindByIdAsync(user.Id);
             WriteLineObject<IdentityUser>(user);
 
 
             DateTime start = DateTime.UtcNow;
-            var taskUserDel = manager.DeleteAsync(user);
-            taskUserDel.Wait();
-            Assert.IsTrue(taskUserDel.Result.Succeeded, string.Concat(taskUser.Result.Errors));
+            var taskUserDel = await manager.DeleteAsync(user);
+            Assert.IsTrue(taskUserDel.Succeeded, string.Concat(taskUser.Errors));
             Console.WriteLine("DeleteAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
 
-            Thread.Sleep(1000);
 
-            var findUserTask = manager.FindByIdAsync(user.Id);
-            findUserTask.Wait();
-            Assert.IsNull(findUserTask.Result);
+            var findUserTask = await manager.FindByIdAsync(user.Id);
+            Assert.IsNull(findUserTask);
 
-            AssertInnerExceptionType<AggregateException, ArgumentException>(() => store.DeleteAsync(null).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.DeleteAsync(null));
         
         }
 
@@ -352,77 +346,70 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("UserStore.User")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void UpdateApplicationUser(bool includeRoles)
+        public async Task UpdateApplicationUser(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GetTestAppUser();
             WriteLineObject<ApplicationUser>(user);
-            var taskUser = manager.CreateAsync(user, DefaultUserPassword);
-            taskUser.Wait();
-            Assert.IsTrue(taskUser.Result.Succeeded, string.Concat(taskUser.Result.Errors));
+            var taskUser = await manager.CreateAsync(user, DefaultUserPassword);
+            Assert.IsTrue(taskUser.Succeeded, string.Concat(taskUser.Errors));
 
             string oFirstName = user.FirstName;
             string oLastName = user.LastName;
 
-            var taskFind1 = manager.FindByNameAsync(user.UserName);
-            taskFind1.Wait();
-            Assert.AreEqual<string>(oFirstName, taskFind1.Result.FirstName);
-            Assert.AreEqual<string>(oLastName, taskFind1.Result.LastName);
+            user = await manager.FindByNameAsync(user.UserName);
+            Assert.AreEqual<string>(oFirstName, user.FirstName);
+            Assert.AreEqual<string>(oLastName, user.LastName);
 
-            user = taskFind1.Result;
             string cFirstName = string.Format("John_{0}", Guid.NewGuid());
             string cLastName = string.Format("Doe_{0}", Guid.NewGuid());
 
             user.FirstName = cFirstName;
             user.LastName = cLastName;
 
-            var taskUserUpdate = manager.UpdateAsync(user);
-            taskUserUpdate.Wait();
-            Assert.IsTrue(taskUserUpdate.Result.Succeeded, string.Concat(taskUserUpdate.Result.Errors));
+            var taskUserUpdate = await manager.UpdateAsync(user);
+            Assert.IsTrue(taskUserUpdate.Succeeded, string.Concat(taskUserUpdate.Errors));
 
-            var taskFind = manager.FindByNameAsync(user.UserName);
-            taskFind.Wait();
-            Assert.AreEqual<string>(cFirstName, taskFind.Result.FirstName);
-            Assert.AreEqual<string>(cLastName, taskFind.Result.LastName);
+            var taskFind = await manager.FindByNameAsync(user.UserName);
+            Assert.AreEqual<string>(cFirstName, taskFind.FirstName);
+            Assert.AreEqual<string>(cLastName, taskFind.LastName);
         }
 
         [TestMethod]
         [TestCategory("UserStore.User")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void UpdateUser(bool includeRoles)
+        public async Task UpdateUser(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GenTestUser();
             WriteLineObject<IdentityUser>(user);
-            var taskUser = manager.CreateAsync(user, DefaultUserPassword);
-            taskUser.Wait();
-            Assert.IsTrue(taskUser.Result.Succeeded, string.Concat(taskUser.Result.Errors));
-            user = manager.FindByIdAsync(user.Id).Result;
+            var taskUser = await manager.CreateAsync(user, DefaultUserPassword);
+            Assert.IsTrue(taskUser.Succeeded, string.Concat(taskUser.Errors));
+            user = await manager.FindByIdAsync(user.Id);
             user.FirstName = "Mike";
-            var taskUserUpdate = manager.UpdateAsync(user);
-            taskUserUpdate.Wait();
+            var taskUserUpdate = await manager.UpdateAsync(user);
 
-            user = manager.FindByIdAsync(user.Id).Result;
-            Assert.IsTrue(taskUserUpdate.Result.Succeeded, string.Concat(taskUserUpdate.Result.Errors));
+            user = await manager.FindByIdAsync(user.Id);
+            Assert.IsTrue(taskUserUpdate.Succeeded, string.Concat(taskUserUpdate.Errors));
             Assert.AreEqual<string>("Mike", user.FirstName);
-            Assert.ThrowsException<AggregateException>(() => store.UpdateAsync(null).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.UpdateAsync(null));
         }
 
         [TestMethod]
         [TestCategory("UserStore.User")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void ChangeUserName(bool includeRoles)
+        public async Task ChangeUserName(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var firstUser = CreateTestUser<ApplicationUser>(includeRoles);
+            var firstUser = await CreateTestUser<ApplicationUser>(includeRoles);
             Console.WriteLine("{0}", "Original User");
             WriteLineObject(firstUser);
             string originalPlainUserName = firstUser.UserName;
@@ -431,16 +418,13 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
             DateTime start = DateTime.UtcNow;
 
-            var taskUserUpdate = manager.SetUserNameAsync(firstUser, userNameChange);
+            var taskUserUpdate = await manager.SetUserNameAsync(firstUser, userNameChange);
 
-            taskUserUpdate.Wait();
             Console.WriteLine("UpdateAsync(ChangeUserName): {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
 
-            Assert.IsTrue(taskUserUpdate.Result.Succeeded, string.Concat(taskUserUpdate.Result.Errors));
-            Task.Delay(200).Wait();
-            var taskUserChanged = manager.FindByNameAsync(userNameChange);
-            taskUserChanged.Wait();
-            var changedUser = taskUserChanged.Result;
+            Assert.IsTrue(taskUserUpdate.Succeeded, string.Concat(taskUserUpdate.Errors));
+            await Task.Delay(200);
+            var changedUser = await manager.FindByNameAsync(userNameChange);
 
             Console.WriteLine("{0}", "Changed User");
             WriteLineObject<IdentityUser>(changedUser);
@@ -449,182 +433,176 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Assert.IsFalse(originalPlainUserName.Equals(changedUser.UserName, StringComparison.OrdinalIgnoreCase), "UserName property not updated.");
 
             Assert.AreEqual<int>(firstUser.Roles.Count, changedUser.Roles.Count);
-            //Assert.IsTrue(changedUser.Roles.All(r => r.PartitionKey == changedUser.Id.ToString()), "Roles partition keys are not equal to the new user id");
 
             Assert.AreEqual<int>(firstUser.Claims.Count, changedUser.Claims.Count);
-            //Assert.IsTrue(changedUser.Claims.All(r => r.PartitionKey == changedUser.Id.ToString()), "Claims partition keys are not equal to the new user id");
 
             Assert.AreEqual<int>(firstUser.Logins.Count, changedUser.Logins.Count);
-            //Assert.IsTrue(changedUser.Logins.All(r => r.PartitionKey == changedUser.Id.ToString()), "Logins partition keys are not equal to the new user id");
 
             Assert.AreEqual<string>(originalUserId, changedUser.Id);
             Assert.AreNotEqual<string>(originalPlainUserName, changedUser.UserName);
             //Check email
-            var taskFindEmail = manager.FindByEmailAsync(changedUser.Email);
-            taskFindEmail.Wait();
-            Assert.IsNotNull(taskFindEmail.Result);
+            var taskFindEmail = await manager.FindByEmailAsync(changedUser.Email);
+            Assert.IsNotNull(taskFindEmail);
 
             //Check the old username is deleted
-            var oldUserTask = manager.FindByNameAsync(originalUserId);
-            oldUserTask.Wait();
-            Assert.IsNull(oldUserTask.Result);
+            var oldUserTask = await manager.FindByNameAsync(originalUserId);
+            Assert.IsNull(oldUserTask);
 
             //Check logins
-            foreach (var log in taskFindEmail.Result.Logins)
+            foreach (var log in taskFindEmail.Logins)
             {
-                var taskFindLogin = manager.FindByLoginAsync(log.LoginProvider, log.ProviderKey);
-                taskFindLogin.Wait();
-                Assert.IsNotNull(taskFindLogin.Result);
-                Assert.AreEqual<string>(originalUserId, taskFindLogin.Result.Id.ToString());
+                var taskFindLogin = await manager.FindByLoginAsync(log.LoginProvider, log.ProviderKey);
+                Assert.IsNotNull(taskFindLogin);
+                Assert.AreEqual<string>(originalUserId, taskFindLogin.Id.ToString());
             }
 
-            AssertInnerExceptionType<AggregateException, ArgumentNullException>(() => store.UpdateAsync(null).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.UpdateAsync(null));
         }
 
         [TestMethod]
         [TestCategory("UserStore.User")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void FindUserByEmail(bool includeRoles)
+        public async Task FindUserByEmail(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var user = CreateUser<ApplicationUser>(includeRoles);
+            var user = await CreateUser<ApplicationUser>(includeRoles);
             WriteLineObject<IdentityUser>(user);
 
             DateTime start = DateTime.UtcNow;
-            var findUserTask = manager.FindByEmailAsync(user.Email);
-            findUserTask.Wait();
+            var findUserTask = await manager.FindByEmailAsync(user.Email);
             Console.WriteLine("FindByEmailAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
 
-            Assert.AreEqual<string>(user.Email, findUserTask.Result.Email);
+            Assert.AreEqual<string>(user.Email, findUserTask.Email);
         }
 
         [TestMethod]
         [TestCategory("UserStore.User")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void FindUsersByEmail(bool includeRoles)
+        public async Task FindUsersByEmail(bool includeRoles)
         {
             string strEmail = Guid.NewGuid().ToString() + "@live.com";
 
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
-
+#if NETCOREAPP3_0
+            strEmail = manager.NormalizeEmail(strEmail);
+#else
+            strEmail = strEmail.ToUpper();
+#endif
             int createdCount = 11;
             for (int i = 0; i < createdCount; i++)
             {
-                var task = CreateTestUserLite(includeRoles, true, true, strEmail);
-                task.Wait();
+                var task = await CreateTestUserLite(includeRoles, true, true, strEmail);
             }
 
             DateTime start = DateTime.UtcNow;
             Console.WriteLine("FindAllByEmailAsync: {0}", strEmail);
 
-            var findUserTask = store.FindAllByEmailAsync(strEmail); 
-            findUserTask.Wait();
+            var findUserTask = await store.FindAllByEmailAsync(strEmail); 
             Console.WriteLine("FindAllByEmailAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
-            Console.WriteLine("Users Found: {0}", findUserTask.Result.Count());
-            Assert.AreEqual<int>(createdCount, findUserTask.Result.Count());
+            Console.WriteLine("Users Found: {0}", findUserTask.Count());
+            Assert.AreEqual<int>(createdCount, findUserTask.Count());
 
-            var listCreated = findUserTask.Result.ToList();
+            var listCreated = findUserTask.ToList();
 
             //Change email and check results
             string strEmailChanged = Guid.NewGuid().ToString() + "@live.com";
             var userToChange = listCreated.Last();
-            manager.SetEmailAsync(userToChange, strEmailChanged).Wait();
+            await manager.SetEmailAsync(userToChange, strEmailChanged);
 
-            var findUserChanged = manager.FindByEmailAsync(strEmailChanged);
-            findUserChanged.Wait();
-            Assert.AreEqual<string>(userToChange.Id, findUserChanged.Result.Id);
-            Assert.AreNotEqual<string>(strEmail, findUserChanged.Result.Email);
+            var findUserChanged = await manager.FindByEmailAsync(strEmailChanged);
+            Assert.AreEqual<string>(userToChange.Id, findUserChanged.Id);
+            Assert.AreNotEqual<string>(strEmail, findUserChanged.Email);
 
 
             //Make sure changed user doesn't show up in previous query
             start = DateTime.UtcNow;
 
-            findUserTask = store.FindAllByEmailAsync(strEmail);
-            findUserTask.Wait();
+            findUserTask = await store.FindAllByEmailAsync(strEmail);
             Console.WriteLine("FindAllByEmailAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
-            Console.WriteLine("Users Found: {0}", findUserTask.Result.Count());
-            Assert.AreEqual<int>((listCreated.Count() - 1), findUserTask.Result.Count());
-
-
+            Console.WriteLine("Users Found: {0}", findUserTask.Count());
+            Assert.AreEqual<int>(listCreated.Count() - 1, findUserTask.Count());
         }
 
         [TestMethod]
         [TestCategory("UserStore.User")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void FindUserById(bool includeRoles)
+        public async Task FindUserById(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var user = CurrentUser(includeRoles);
+            var user = await CurrentUser(includeRoles);
             DateTime start = DateTime.UtcNow;
-            var findUserTask = manager.FindByIdAsync(user.Id);
-            findUserTask.Wait();
+            var findUser = await manager.FindByIdAsync(user.Id);
+
             Console.WriteLine("FindByIdAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
 
-            Assert.AreEqual<string>(user.Id, findUserTask.Result.Id);
+            Assert.AreEqual<string>(user.Id, findUser.Id);
+
+            findUser = await manager.FindByIdAsync(Guid.NewGuid().ToString());
+            Assert.IsNull(findUser);
         }
 
         [TestMethod]
         [TestCategory("UserStore.User")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void FindUserByName(bool includeRoles)
+        public async Task FindUserByName(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var user = CurrentUser(includeRoles);
+            var user = await CurrentUser(includeRoles);
             WriteLineObject<IdentityUser>(user);
             DateTime start = DateTime.UtcNow;
-            var findUserTask = manager.FindByNameAsync(user.UserName);
-            findUserTask.Wait();
+            var findUser = await manager.FindByNameAsync(user.UserName);
             Console.WriteLine("FindByNameAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
 
-            Assert.AreEqual<string>(user.UserName, findUserTask.Result.UserName);
+            Assert.AreEqual<string>(user.UserName, findUser.UserName);
+
+            findUser = await manager.FindByNameAsync(Guid.NewGuid().ToString());
+            Assert.IsNull(findUser);
+
         }
 
         [TestMethod]
         [TestCategory("UserStore.User")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void AddUserLogin(bool includeRoles)
+        public async Task AddUserLogin(bool includeRoles)
         {
-            var user = CreateTestUser<ApplicationUser>(includeRoles, false);
+            var user = await CreateTestUser<ApplicationUser>(includeRoles, false);
             WriteLineObject(user);
-            AddUserLoginHelper(user, GenGoogleLogin(), includeRoles);
+            await AddUserLoginHelper(user, GenGoogleLogin(), includeRoles);
         }
 
-        public void AddUserLoginHelper(ApplicationUser user, UserLoginInfo loginInfo, bool includeRoles)
+        public async Task AddUserLoginHelper(ApplicationUser user, UserLoginInfo loginInfo, bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
 
-            var userAddLoginTask = manager.AddLoginAsync(user, loginInfo);
-            userAddLoginTask.Wait();
-            Assert.IsTrue(userAddLoginTask.Result.Succeeded, string.Concat(userAddLoginTask.Result.Errors));
+            var userAddLoginTask = await manager.AddLoginAsync(user, loginInfo);
+            Assert.IsTrue(userAddLoginTask.Succeeded, string.Concat(userAddLoginTask.Errors));
 
-            var loginGetTask = manager.GetLoginsAsync(user);
+            var loginGetTask = await manager.GetLoginsAsync(user);
 
-            loginGetTask.Wait();
-            Assert.IsTrue(loginGetTask.Result
+            Assert.IsTrue(loginGetTask
                 .Any(log => log.LoginProvider == loginInfo.LoginProvider
                     & log.ProviderKey == loginInfo.ProviderKey), "LoginInfo not found: GetLoginsAsync");
 
             DateTime start = DateTime.UtcNow;
 
-            var loginGetTask2 = manager.FindByLoginAsync(loginGetTask.Result.First().LoginProvider, loginGetTask.Result.First().ProviderKey);
+            var loginGetTask2 = await manager.FindByLoginAsync(loginGetTask.First().LoginProvider, loginGetTask.First().ProviderKey);
 
-            loginGetTask2.Wait();
             Console.WriteLine(string.Format("FindAsync(By Login): {0} seconds", (DateTime.UtcNow - start).TotalSeconds));
-            Assert.IsNotNull(loginGetTask2.Result);
+            Assert.IsNotNull(loginGetTask2);
 
         }
 
@@ -632,17 +610,16 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("UserStore.User")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void AddRemoveUserToken(bool includeRoles)
+        public async Task AddRemoveUserToken(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GenTestUser();
             WriteLineObject<IdentityUser>(user);
-            var taskUser = manager.CreateAsync(user, DefaultUserPassword);
-            taskUser.Wait();
-            Assert.IsTrue(taskUser.Result.Succeeded, string.Concat(taskUser.Result.Errors));
-            user = manager.FindByIdAsync(user.Id).Result;
+            var taskUser = await manager.CreateAsync(user, DefaultUserPassword);
+            Assert.IsTrue(taskUser.Succeeded, string.Concat(taskUser.Errors));
+            user = await manager.FindByIdAsync(user.Id);
 
             string tokenValue = Guid.NewGuid().ToString();
             string tokenName = string.Format("TokenName{0}", Guid.NewGuid().ToString());
@@ -651,34 +628,34 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Console.WriteLine($"TokenName: {tokenName2}");
             Console.WriteLine($"ToienValue: {tokenValue}");
 
-            manager.SetAuthenticationTokenAsync(user,
+            await manager.SetAuthenticationTokenAsync(user,
                 Constants.LoginProviders.GoogleProvider.LoginProvider,
                 tokenName,
-                tokenValue).Wait();
+                tokenValue);
 
-            string getTokenValue = manager.GetAuthenticationTokenAsync(user,
+            string getTokenValue = await manager.GetAuthenticationTokenAsync(user,
                 Constants.LoginProviders.GoogleProvider.LoginProvider,
-                tokenName).Result;
+                tokenName);
             Assert.IsNotNull(tokenName);
             Assert.AreEqual(getTokenValue, tokenValue);
 
-            manager.SetAuthenticationTokenAsync(user,
+            await manager.SetAuthenticationTokenAsync(user,
                 Constants.LoginProviders.GoogleProvider.LoginProvider,
                 tokenName2,
-                tokenValue).Wait();
+                tokenValue);
 
-            manager.RemoveAuthenticationTokenAsync(user,
+            await manager.RemoveAuthenticationTokenAsync(user,
                 Constants.LoginProviders.GoogleProvider.LoginProvider,
-                tokenName).Wait();
+                tokenName);
 
-            getTokenValue = manager.GetAuthenticationTokenAsync(user,
+            getTokenValue = await manager.GetAuthenticationTokenAsync(user,
                 Constants.LoginProviders.GoogleProvider.LoginProvider,
-                tokenName).Result;
+                tokenName);
             Assert.IsNull(getTokenValue);
 
-            getTokenValue = manager.GetAuthenticationTokenAsync(user,
+            getTokenValue = await manager.GetAuthenticationTokenAsync(user,
                 Constants.LoginProviders.GoogleProvider.LoginProvider,
-                tokenName2).Result;
+                tokenName2);
             Assert.IsNotNull(getTokenValue);
             Assert.AreEqual(getTokenValue, tokenValue);
         }
@@ -688,239 +665,213 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
 
-        public void AddRemoveUserLogin(bool includeRoles)
+        public async Task AddRemoveUserLogin(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GenTestUser();
             WriteLineObject<IdentityUser>(user);
-            var taskUser = manager.CreateAsync(user, DefaultUserPassword);
-            taskUser.Wait();
-            Assert.IsTrue(taskUser.Result.Succeeded, string.Concat(taskUser.Result.Errors));
+            var taskUser = await manager.CreateAsync(user, DefaultUserPassword);
+            Assert.IsTrue(taskUser.Succeeded, string.Concat(taskUser.Errors));
 
             var loginInfo = GenGoogleLogin();
 
-            user = manager.FindByIdAsync(user.Id).Result;
-            var userAddLoginTask = manager.AddLoginAsync(user, loginInfo);
+            user = await manager.FindByIdAsync(user.Id);
+            var userAddLoginTask = await manager.AddLoginAsync(user, loginInfo);
 
-            userAddLoginTask.Wait();
-            Assert.IsTrue(userAddLoginTask.Result.Succeeded, string.Concat(userAddLoginTask.Result.Errors));
+            Assert.IsTrue(userAddLoginTask.Succeeded, string.Concat(userAddLoginTask.Errors));
 
+            var loginGetTask = await manager.GetLoginsAsync(user);
 
-            var loginGetTask = manager.GetLoginsAsync(user);
-
-            loginGetTask.Wait();
-            Assert.IsTrue(loginGetTask.Result
+            Assert.IsTrue(loginGetTask
                 .Any(log => log.LoginProvider == loginInfo.LoginProvider
                     & log.ProviderKey == loginInfo.ProviderKey), "LoginInfo not found: GetLoginsAsync");
 
-            var loginGetTask2 = manager.FindByLoginAsync(loginGetTask.Result.First().LoginProvider, loginGetTask.Result.First().ProviderKey);
+            var loginGetTask2 = await manager.FindByLoginAsync(loginGetTask.First().LoginProvider, loginGetTask.First().ProviderKey);
+            Assert.IsNotNull(loginGetTask2);
 
-            loginGetTask2.Wait();
-            Assert.IsNotNull(loginGetTask2.Result);
+            var userRemoveLoginTaskNeg1 = await manager.RemoveLoginAsync(user, string.Empty, loginInfo.ProviderKey);
 
-            var userRemoveLoginTaskNeg1 = manager.RemoveLoginAsync(user, string.Empty, loginInfo.ProviderKey);
+            var userRemoveLoginTaskNeg2 = await manager.RemoveLoginAsync(user, loginInfo.LoginProvider, string.Empty);
 
-            userRemoveLoginTaskNeg1.Wait();
+            var userRemoveLoginTask = await manager.RemoveLoginAsync(user, loginInfo.LoginProvider, loginInfo.ProviderKey);
 
-            var userRemoveLoginTaskNeg2 = manager.RemoveLoginAsync(user, loginInfo.LoginProvider, string.Empty);
-
-            userRemoveLoginTaskNeg2.Wait();
-
-
-            var userRemoveLoginTask = manager.RemoveLoginAsync(user, loginInfo.LoginProvider, loginInfo.ProviderKey);
-
-            userRemoveLoginTask.Wait();
-            Assert.IsTrue(userRemoveLoginTask.Result.Succeeded, string.Concat(userRemoveLoginTask.Result.Errors));
-            var loginGetTask3 = manager.GetLoginsAsync(user);
-
-            loginGetTask3.Wait();
-            Assert.IsTrue(!loginGetTask3.Result.Any(), "LoginInfo not removed");
+            Assert.IsTrue(userRemoveLoginTask.Succeeded, string.Concat(userRemoveLoginTask.Errors));
+           
+            var loginGetTask3 = await manager.GetLoginsAsync(user);
+            Assert.IsTrue(!loginGetTask3.Any(), "LoginInfo not removed");
 
             //Negative cases
 
-            var loginFindNeg = manager.FindByLoginAsync("asdfasdf", "http://4343443dfaksjfaf");
+            var loginFindNeg = await manager.FindByLoginAsync("asdfasdf", "http://4343443dfaksjfaf");
+            Assert.IsNull(loginFindNeg);
 
-            loginFindNeg.Wait();
-            Assert.IsNull(loginFindNeg.Result);
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.AddLoginAsync(null, loginInfo));
 
-            Assert.ThrowsException<ArgumentNullException>(() => store.AddLoginAsync(null, loginInfo).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.AddLoginAsync(user, null));
 
-            Assert.ThrowsException<ArgumentNullException>(() => store.AddLoginAsync(user, null).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.RemoveLoginAsync(null, loginInfo.ProviderKey, loginInfo.LoginProvider));
 
-            Assert.ThrowsException<ArgumentNullException>(() => store.RemoveLoginAsync(null, loginInfo.ProviderKey, loginInfo.LoginProvider).Wait());
-
-            Assert.ThrowsException<AggregateException>(() => store.GetLoginsAsync(null).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.GetLoginsAsync(null));
         }
 
         [TestMethod]
         [TestCategory("UserStore.User")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
-        public void AddUserRole(bool includeRoles)
+        public async Task AddUserRole(bool includeRoles)
         {
             string strUserRole = string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N"));
-            WriteLineObject<IdentityUser>(CurrentUser(includeRoles));
-            AddUserRoleHelper(CurrentUser(includeRoles), strUserRole, includeRoles);
+            WriteLineObject<IdentityUser>(await CurrentUser(includeRoles));
+            await AddUserRoleHelper(await CurrentUser(includeRoles), strUserRole, includeRoles);
         }
 
         [TestMethod]
         [TestCategory("UserStore.User")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
-        public void GetUsersByRole(bool includeRoles)
+        public async Task GetUsersByRole(bool includeRoles)
         {
             string strUserRole = string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N"));
-            var identityRole = CreateRoleIfNotExists(includeRoles, strUserRole);
+            var identityRole = await CreateRoleIfNotExists(includeRoles, strUserRole);
 
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
             int userCount = 4;
             DateTime start2 = DateTime.UtcNow;
             ApplicationUser tempUser = null;
-            IdentityRole role = CreateRoleIfNotExists(includeRoles, strUserRole);
+            IdentityRole role = await CreateRoleIfNotExists(includeRoles, strUserRole);
             Console.WriteLine($"RoleId: {role.Id}");
             for (int i = 0; i < userCount; i++)
             {
                 DateTime start = DateTime.UtcNow;
                 Console.WriteLine("CreateTestUserLite()");
-                tempUser = CreateTestUserLite(true, true).Result;
+                tempUser = await CreateTestUserLite(true, true);
                 Console.WriteLine("CreateTestUserLite(): {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
-                AddUserRoleHelper(tempUser, strUserRole, includeRoles);
+                await AddUserRoleHelper(tempUser, strUserRole, includeRoles);
             }
             Console.WriteLine("GenerateUsers(): {0} user count", userCount);
             Console.WriteLine("GenerateUsers(): {0} seconds", (DateTime.UtcNow - start2).TotalSeconds);
 
             start2 = DateTime.UtcNow;
-            var users = manager.GetUsersInRoleAsync(strUserRole).Result;
+            var users = await manager.GetUsersInRoleAsync(strUserRole);
             Console.WriteLine("GetUsersInRoleAsync(): {0} seconds", (DateTime.UtcNow - start2).TotalSeconds);
 
             Assert.AreEqual(users.Where(u => u.Roles.Any(r=> r.RoleId == role.Id)).Count(), userCount);
         }
 
-        private IdentityRole CreateRoleIfNotExists(bool includeRoles, string roleName)
+        private async Task<IdentityRole> CreateRoleIfNotExists(bool includeRoles, string roleName)
         {
             var rmanager = CreateRoleManager(includeRoles);
 
-            var userRole = rmanager.FindByNameAsync(roleName);
-            userRole.Wait();
-            IdentityRole role = userRole.Result;
-            if (userRole.Result == null)
+            var userRole = await rmanager.FindByNameAsync(roleName);
+            IdentityRole role = userRole;
+            if (userRole == null)
             {
-                var taskResult = rmanager.CreateAsync(new IdentityRole(roleName)).Result;
+                var taskResult = await rmanager.CreateAsync(new IdentityRole(roleName));
                 Assert.IsTrue(taskResult.Succeeded);
-                role = rmanager.FindByNameAsync(roleName).Result;
+                role = await rmanager.FindByNameAsync(roleName);
             }
 
             return role;
         }
 
-        public IdentityRole AddUserRoleHelper(ApplicationUser user, string roleName, bool includeRoles)
+        public async Task<IdentityRole> AddUserRoleHelper(ApplicationUser user, string roleName, bool includeRoles)
         {
-            var identityRole = CreateRoleIfNotExists(includeRoles, roleName);
+            var identityRole = await CreateRoleIfNotExists(includeRoles, roleName);
             Console.WriteLine($"RoleId: {identityRole.Id}");
 
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var userRoleTask = manager.AddToRoleAsync(user, roleName);
-
-            userRoleTask.Wait();
-            Assert.IsTrue(userRoleTask.Result.Succeeded, string.Concat(userRoleTask.Result.Errors));
+            var userRoleTask = await manager.AddToRoleAsync(user, roleName);
+            Assert.IsTrue(userRoleTask.Succeeded, string.Concat(userRoleTask.Errors));
 
 
-            var roles2Task = manager.IsInRoleAsync(user, roleName);
-            roles2Task.Wait();
-            Assert.IsTrue(roles2Task.Result, "Role not found");
+            var roles2Task = await manager.IsInRoleAsync(user, roleName);
+            Assert.IsTrue(roles2Task, "Role not found");
             return identityRole;
         }
 
-        [TestMethod]
         [TestCategory("UserStore.User")]
+        [TestMethod]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
-        public void AddRemoveUserRole(bool includeRoles)
+        public async Task AddRemoveUserRole(bool includeRoles)
         {
             string roleName = string.Format("{0}_{1}", Constants.AccountRoles.AccountTestAdminRole, Guid.NewGuid().ToString("N"));
             
-            var adminRole = CreateRoleIfNotExists(includeRoles, roleName);
+            var adminRole = await CreateRoleIfNotExists(includeRoles, roleName);
 
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
-            var user = CurrentUser(includeRoles);
-            user = manager.FindByIdAsync(user.Id).Result;
-            WriteLineObject(user);
-            var userRoleTask = manager.AddToRoleAsync(user, roleName);
+            var user = await CurrentUser(includeRoles);
+            user = await manager.FindByIdAsync(user.Id);
+            WriteLineObject(user.Id);
+            var userRoleTask = await manager.AddToRoleAsync(user, roleName);
 
-            userRoleTask.Wait();
-            Assert.IsTrue(userRoleTask.Result.Succeeded, string.Concat(userRoleTask.Result.Errors));
+            Assert.IsTrue(userRoleTask.Succeeded, string.Concat(userRoleTask.Errors));
             DateTime getRolesStart = DateTime.UtcNow;
-            var rolesTask = manager.GetRolesAsync(user);
+            var tempRoles = await manager.GetRolesAsync(user);
 
-            rolesTask.Wait();
-            var tempRoles = rolesTask.Result;
             var getout = string.Format("{0} ms", (DateTime.UtcNow - getRolesStart).TotalMilliseconds);
             Console.WriteLine(getout);
-            Console.WriteLine(getout);
-            Assert.IsTrue(rolesTask.Result.Contains(roleName), "Role not found");
+            Assert.IsTrue(tempRoles.Contains(roleName), "Role not found");
 
             DateTime isInRolesStart = DateTime.UtcNow;
 
 
-            var roles2Task = manager.IsInRoleAsync(user, roleName);
+            var roles2Task = await manager.IsInRoleAsync(user, roleName);
 
-            roles2Task.Wait();
             var isInout = string.Format("IsInRoleAsync() {0} ms", (DateTime.UtcNow - isInRolesStart).TotalMilliseconds);
             Console.WriteLine(isInout);
-            Assert.IsTrue(roles2Task.Result, "Role not found");
+            Assert.IsTrue(roles2Task, "Role not found");
 
 
-            manager.RemoveFromRoleAsync(user, roleName).Wait();
+            await manager.RemoveFromRoleAsync(user, roleName);
 
             DateTime start = DateTime.UtcNow;
-            var rolesTask2 = manager.GetRolesAsync(user).Result;
+            var rolesTask2 = await manager.GetRolesAsync(user);
 
             Console.WriteLine("GetRolesAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
 
             Assert.IsFalse(rolesTask2.Contains(roleName), "Role not removed.");
 
 
-            Assert.IsTrue(Assert.ThrowsException<AggregateException>(() => store.AddToRoleAsync(null, roleName).Wait()).InnerException is ArgumentException);
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.AddToRoleAsync(null, roleName));
 
-            Assert.IsTrue(Assert.ThrowsException<AggregateException>(() => store.AddToRoleAsync(user, null).Wait()).InnerException is ArgumentException);
+            await Assert.ThrowsExceptionAsync <ArgumentException>(async () => await store.AddToRoleAsync(user, null));
 
-            Assert.IsTrue(Assert.ThrowsException<AggregateException>(() => store.AddToRoleAsync(user, Guid.NewGuid().ToString()).Wait()).InnerException is InvalidOperationException);
+            await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () => await store.AddToRoleAsync(user, Guid.NewGuid().ToString()));
 
-            Assert.IsTrue(Assert.ThrowsException<AggregateException>(() => store.RemoveFromRoleAsync(null, roleName).Wait()).InnerException is ArgumentException);
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.RemoveFromRoleAsync(null, roleName));
 
-            Assert.IsTrue(Assert.ThrowsException<AggregateException>(() => store.RemoveFromRoleAsync(user, null).Wait()).InnerException is ArgumentException);
+            await Assert.ThrowsExceptionAsync<ArgumentException>(async () => await store.RemoveFromRoleAsync(user, null));
 
-            Assert.IsTrue(Assert.ThrowsException<AggregateException>(() => store.GetRolesAsync(null).Wait()).InnerException is ArgumentException);
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.GetRolesAsync(null));
 
         }
 
         [TestMethod]
         [TestCategory("UserStore.User")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
-        public void IsUserInRole(bool includeRoles)
+        public async Task IsUserInRole(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var user = CurrentUser(includeRoles);
+            var user = await CurrentUser(includeRoles);
             WriteLineObject(user);
             string roleName = string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N"));
 
-            AddUserRoleHelper(user, roleName, includeRoles);
+            await AddUserRoleHelper(user, roleName, includeRoles);
 
             DateTime start = DateTime.UtcNow;
 
-            var roles2Task = manager.IsInRoleAsync(user, roleName);
-
-            roles2Task.Wait();
+            var roles2Task = await manager.IsInRoleAsync(user, roleName);
             Console.WriteLine("IsInRoleAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
-            Assert.IsTrue(roles2Task.Result, "Role not found");
+            Assert.IsTrue(roles2Task, "Role not found");
 
-            Assert.IsTrue(Assert.ThrowsException<AggregateException>(() => store.IsInRoleAsync(null, roleName).Wait()).InnerException is ArgumentException);
-            Assert.IsTrue(Assert.ThrowsException<AggregateException>(() => store.IsInRoleAsync(user, null).Wait()).InnerException is ArgumentException);
+            await Assert.ThrowsExceptionAsync<ArgumentException>(async () => await store.IsInRoleAsync(null, roleName));
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.IsInRoleAsync(user, null));
            
         }
 
@@ -952,33 +903,28 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("UserStore.User")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void AddUserClaim(bool includeRoles)
+        public async Task AddUserClaim(bool includeRoles)
         {
-            WriteLineObject<IdentityUser>(CurrentUser(includeRoles));
-            AddUserClaimHelper(CurrentUser(includeRoles), GenUserClaim(), includeRoles);
+            WriteLineObject<IdentityUser>(await CurrentUser(includeRoles));
+            await AddUserClaimHelper(await CurrentUser(includeRoles), GenUserClaim(), includeRoles);
         }
 
-        private void AddUserClaimHelper(ApplicationUser user, Claim claim, bool includeRoles)
+        private async Task AddUserClaimHelper(ApplicationUser user, Claim claim, bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-
-            var userClaimTask = manager.AddClaimAsync(user, claim);
-
-            userClaimTask.Wait();
-            Assert.IsTrue(userClaimTask.Result.Succeeded, string.Concat(userClaimTask.Result.Errors.Select(e => e.Code)));
-            var claimsTask = manager.GetClaimsAsync(user);
-
-            claimsTask.Wait();
-            Assert.IsTrue(claimsTask.Result.Any(c => c.Value == claim.Value & c.ValueType == claim.ValueType), "Claim not found");
+            var userClaimTask = await manager.AddClaimAsync(user, claim);
+            Assert.IsTrue(userClaimTask.Succeeded, string.Concat(userClaimTask.Errors.Select(e => e.Code)));
+            var claimsTask = await manager.GetClaimsAsync(user);
+            Assert.IsTrue(claimsTask.Any(c => c.Value == claim.Value & c.ValueType == claim.ValueType), "Claim not found");
         }
 
         [TestMethod]
         [TestCategory("UserStore.User")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void GetUsersByClaim(bool includeRoles)
+        public async Task GetUsersByClaim(bool includeRoles)
         {
             var claim = GenUserClaim();
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
@@ -991,15 +937,15 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             {
                 DateTime start = DateTime.UtcNow;
                 Console.WriteLine("CreateTestUserLite()");
-                tempUser = CreateTestUserLite(true, true).Result;
+                tempUser = await CreateTestUserLite(includeRoles, true, true);
                 Console.WriteLine("CreateTestUserLite(): {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
-                AddUserClaimHelper(tempUser, claim, includeRoles);
+                await AddUserClaimHelper(tempUser, claim, includeRoles);
             }
             Console.WriteLine("GenerateUsers(): {0} user count", userCount);
             Console.WriteLine("GenerateUsers(): {0} seconds", (DateTime.UtcNow - start2).TotalSeconds);
 
             start2 = DateTime.UtcNow;
-            var users = manager.GetUsersForClaimAsync(claim).Result;
+            var users = await manager.GetUsersForClaimAsync(claim);
             Console.WriteLine("GetUsersForClaimAsync(): {0} seconds", (DateTime.UtcNow - start2).TotalSeconds);
 
             Assert.AreEqual(users.Where(u => u.Claims.Single(c => c.ClaimType == claim.Type && c.ClaimValue == c.ClaimValue) !=null).Count(), userCount);
@@ -1009,69 +955,61 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("UserStore.User")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void AddRemoveUserClaim(bool includeRoles)
+        public async Task AddRemoveUserClaim(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var user = CurrentUser(includeRoles);
+            var user = await CurrentUser(includeRoles);
             WriteLineObject<IdentityUser>(user);
             Claim claim = GenAdminClaim();
 
-            var userClaimTask = manager.AddClaimAsync(user, claim);
+            var userClaimTask = await manager.AddClaimAsync(user, claim);
 
-            userClaimTask.Wait();
-            Assert.IsTrue(userClaimTask.Result.Succeeded, string.Concat(userClaimTask.Result.Errors));
+            Assert.IsTrue(userClaimTask.Succeeded, string.Concat(userClaimTask.Errors));
 
-            var claimsTask = manager.GetClaimsAsync(user);
+            var claimsTask = await manager.GetClaimsAsync(user);
 
-            claimsTask.Wait();
-            Assert.IsTrue(claimsTask.Result.Any(c => c.Value == claim.Value & c.ValueType == claim.ValueType), "Claim not found");
+            Assert.IsTrue(claimsTask.Any(c => c.Value == claim.Value & c.ValueType == claim.ValueType), "Claim not found");
 
+            var userRemoveClaimTask = await manager.RemoveClaimAsync(user, claim);
 
-            var userRemoveClaimTask = manager.RemoveClaimAsync(user, claim);
+            Assert.IsTrue(userClaimTask.Succeeded, string.Concat(userClaimTask.Errors));
+            var claimsTask2 = await manager.GetClaimsAsync(user);
 
-            userRemoveClaimTask.Wait();
-            Assert.IsTrue(userClaimTask.Result.Succeeded, string.Concat(userClaimTask.Result.Errors));
-            var claimsTask2 = manager.GetClaimsAsync(user);
-
-            claimsTask2.Wait();
-            Assert.IsTrue(!claimsTask2.Result.Any(c => c.Value == claim.Value & c.ValueType == claim.ValueType), "Claim not removed");
+            Assert.IsTrue(!claimsTask2.Any(c => c.Value == claim.Value & c.ValueType == claim.ValueType), "Claim not removed");
 
             //adding test for removing an empty claim
             Claim claimEmpty = GenAdminClaimEmptyValue();
 
-            var userClaimTask2 = manager.AddClaimAsync(user, claimEmpty);
+            var userClaimTask2 = await manager.AddClaimAsync(user, claimEmpty);
 
-            userClaimTask2.Wait();
+            var userRemoveClaimTask2 = await manager.RemoveClaimAsync(user, claimEmpty);
 
-            var userRemoveClaimTask2 = manager.RemoveClaimAsync(user, claimEmpty);
+            Assert.IsTrue(userClaimTask2.Succeeded, string.Concat(userClaimTask2.Errors));
 
-            userRemoveClaimTask2.Wait();
-            Assert.IsTrue(userClaimTask2.Result.Succeeded, string.Concat(userClaimTask2.Result.Errors));
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.AddClaimsAsync(null, new List<Claim>() { claim }));
 
-            Assert.ThrowsException<ArgumentNullException>(() => store.AddClaimsAsync(null, new List<Claim>() { claim }).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.AddClaimsAsync(user, null));
 
-            Assert.ThrowsException<ArgumentNullException>(() => store.AddClaimsAsync(user, null).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.RemoveClaimsAsync(null, new List<Claim>() { claim }));
 
-            Assert.IsTrue(Assert.ThrowsException<AggregateException>(() => store.RemoveClaimsAsync(null, new List<Claim>() { claim }).Wait()).InnerException is ArgumentException);
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.RemoveClaimsAsync(user, null));
 
-            Assert.IsTrue(Assert.ThrowsException<AggregateException>(() => store.RemoveClaimsAsync(user, null).Wait()).InnerException is ArgumentException);
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.RemoveClaimsAsync(user, new List<Claim>() { new Claim(claim.Type, null) }));
 
-            Assert.ThrowsException<ArgumentNullException>(() => store.RemoveClaimsAsync(user, new List<Claim>() { new Claim(claim.Type, null) }).Wait());
-
-            Assert.ThrowsException<ArgumentNullException>(() => store.AddClaimsAsync(null, new List<Claim>() { claim }).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.AddClaimsAsync(null, new List<Claim>() { claim }));
         }
 
         [TestMethod]
         [TestCategory("UserStore.User")]
-        public void ThrowIfDisposed()
+        public async Task ThrowIfDisposed()
         {
             var store = new UserStore<ApplicationUser, IdentityRole, IdentityCloudContext>(GetContext(), describer: new IdentityErrorDescriber());
             store.Dispose();
             GC.Collect();
 
-            Assert.IsTrue(Assert.ThrowsException<AggregateException>(() => store.DeleteAsync(new ApplicationUser()).Wait()).InnerException is ObjectDisposedException);            
+            await Assert.ThrowsExceptionAsync<ObjectDisposedException>(async () => await store.DeleteAsync(new ApplicationUser()));
         }
 
     }

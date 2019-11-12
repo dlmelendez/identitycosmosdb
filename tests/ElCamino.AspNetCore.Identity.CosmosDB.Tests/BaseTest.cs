@@ -11,7 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Cosmos;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 {
@@ -105,13 +105,16 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
                 AuthKey = root["IdentityCosmosDB:identityConfiguration:authKey"],
                 Database = root["IdentityCosmosDB:identityConfiguration:database"],
                 IdentityCollection = root["IdentityCosmosDB:identityConfiguration:identityCollection"],
-                Policy = new ConnectionPolicy()
+                Options = new CosmosClientOptions()
                 {
                      ConnectionMode = ConnectionMode.Gateway,
-                     ConnectionProtocol = Protocol.Https
+                     ConsistencyLevel = ConsistencyLevel.Session,    
+                     SerializerOptions = new CosmosSerializationOptions()
                 }
             };
 
+            idconfig.Options.SerializerOptions.PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase;
+            
             return idconfig;
         }
 

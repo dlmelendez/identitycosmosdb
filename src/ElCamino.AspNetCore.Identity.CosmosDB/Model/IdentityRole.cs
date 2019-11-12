@@ -1,7 +1,9 @@
 // MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 
-using Microsoft.Azure.Documents;
+using ElCamino.AspNetCore.Identity.CosmosDB.Helpers;
+using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
@@ -38,20 +40,15 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Model
         public IdentityRole() { }
 
         [JsonProperty(PropertyName = "id")]
-        public override TKey Id { get; set; }
-
-        [JsonProperty(PropertyName = "_rid")]
-        public virtual string ResourceId { get; set; }
-
-        [JsonProperty(PropertyName = "_self")]
-        public virtual string SelfLink { get; set; }
-
-        [JsonIgnore]
-        public string AltLink { get; set; }
-
-        [JsonConverter(typeof(UnixDateTimeConverter))]
-        [JsonProperty(PropertyName = "_ts")]
-        public virtual DateTime Timestamp { get; set; }
+        public override TKey Id
+        {
+            get => base.Id;
+            set
+            {
+                base.Id = value;
+                SetPartitionKey();
+            }
+        }
 
         [JsonProperty(PropertyName = "_etag")]
         public virtual string ETag { get; set; }
@@ -61,6 +58,12 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Model
             Name = roleName;
         }
 
+        public virtual void SetPartitionKey()
+        {
+            PartitionKey = PartitionKeyHelper.GetPartitionKeyFromId(Id?.ToString());
+        }
+
+        public virtual string PartitionKey { get; set; }
 
         [JsonProperty(PropertyName = "claims")]
         public virtual IList<TRoleClaim> Claims { get; } = new List<TRoleClaim>();

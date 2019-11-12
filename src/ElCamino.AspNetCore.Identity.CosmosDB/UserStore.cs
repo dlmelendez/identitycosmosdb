@@ -8,18 +8,17 @@ using Microsoft.AspNetCore.Identity;
 using System.Net;
 using System.Diagnostics;
 using ElCamino.AspNetCore.Identity.CosmosDB.Model;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Linq;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Azure.Cosmos.Linq;
 using Newtonsoft.Json;
 using System.Threading;
 using ElCamino.AspNetCore.Identity.CosmosDB.Extensions;
 using System.ComponentModel;
 using System.Security.Claims;
 using System.Globalization;
-using Microsoft.Azure.Documents.Client;
 using ElCamino.AspNetCore.Identity.CosmosDB.Helpers;
 using System.Collections.Concurrent;
-
+using Microsoft.Azure.Cosmos.Scripts;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB
 {
@@ -71,23 +70,23 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             }
 
             var userId = user.Id;
-            
-            SqlQuerySpec query = new SqlQuerySpec("SELECT VALUE r.roleId " +
+
+            QueryDefinition query = new QueryDefinition("SELECT VALUE r.roleId " +
                 "FROM u " +
                 "JOIN r in u.roles " +
-                "WHERE (u.id = @userid) ", new SqlParameterCollection(){
-             new SqlParameter("@userid", userId)
-            });
+                "WHERE (u.id = @userid) ").WithParameter("@userid", userId);
 
-            List<String> lroleIds =  await ExecuteSqlQuery<String>(query, Context.FeedOptions).ToListAsync(cancellationToken: cancellationToken);
+            List<String> lroleIds =  await (await ExecuteSqlQuery<String>(query, Context.FeedOptions)
+                                            .ConfigureAwait(false))
+                                            .ToListAsync(cancellationToken: cancellationToken);
 
             if (lroleIds.Count > 0)
             {
-                SqlQuerySpec query2 = new SqlQuerySpec(string.Format("SELECT VALUE r.name " +
+                QueryDefinition query2 = new QueryDefinition(string.Format("SELECT VALUE r.name " +
                     "FROM r " +
                     "WHERE (r.id in ( {0} )) ", string.Join(",", lroleIds.Select(rn => "'" + rn + "'"))));
 
-                return await ExecuteSqlQuery<String>(query2, Context.FeedOptions).ToListAsync(cancellationToken: cancellationToken);
+                return await (await ExecuteSqlQuery<String>(query2, Context.FeedOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
             }
 
             return new List<String>();
@@ -102,16 +101,15 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             {
                 throw new ArgumentNullException(nameof(claim));
             }
-            SqlQuerySpec query = new SqlQuerySpec("SELECT VALUE u " +
+            QueryDefinition query = new QueryDefinition("SELECT VALUE u " +
                    "FROM ROOT u " +
                    "JOIN uc in u.claims " +
-                   "WHERE (uc.claimValue = @claimValue) AND (uc.claimType = @claimType) ", new SqlParameterCollection(){
-                    new SqlParameter("@claimValue", claim.Value),
-                    new SqlParameter("@claimType", claim.Type)
-               });
+                   "WHERE (uc.claimValue = @claimValue) AND (uc.claimType = @claimType) ")
+                .WithParameter("@claimValue", claim.Value)
+                .WithParameter("@claimType", claim.Type);
 
             Debug.WriteLine(query.QueryText);
-            return await ExecuteSqlQuery<TUser>(query, Context.FeedOptions).ToListAsync(cancellationToken: cancellationToken);
+            return await (await ExecuteSqlQuery<TUser>(query, Context.FeedOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
         }
 
 
@@ -135,15 +133,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             string roleId = await GetRoleIdByNormalizedNameAsync(normalizedRoleName, cancellationToken: cancellationToken);
             if (!string.IsNullOrWhiteSpace(roleId))
             {
-                SqlQuerySpec query = new SqlQuerySpec("SELECT VALUE u " +
+                QueryDefinition query = new QueryDefinition("SELECT VALUE u " +
                     "FROM ROOT u " +
                     "JOIN ur in u.roles " +
-                    "WHERE (ur.roleId = @roleId) ", new SqlParameterCollection(){
-                    new SqlParameter("@roleId", roleId)
-                });
+                    "WHERE (ur.roleId = @roleId) ")
+                    .WithParameter("@roleId", roleId);
 
                 Debug.WriteLine(query.QueryText);
-                return await ExecuteSqlQuery<TUser>(query, Context.FeedOptions).ToListAsync(cancellationToken: cancellationToken);
+                return await (await ExecuteSqlQuery<TUser>(query, Context.FeedOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
             }
             return new List<TUser>();
         }
@@ -184,14 +181,15 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         protected override async Task<TRole> FindRoleAsync(string normalizedRoleName, CancellationToken cancellationToken)
         {
-            SqlQuerySpec roleQuery = new SqlQuerySpec("SELECT VALUE r " +
+            QueryDefinition roleQuery = new QueryDefinition("SELECT VALUE r " +
                             "FROM ROOT r " +
-                            "WHERE (r.normalizedName = @normalizedName) ", new SqlParameterCollection(){
-                            new SqlParameter("@normalizedName", normalizedRoleName)
-                        });
+                            "WHERE (r.normalizedName = @normalizedName) ")
+                            .WithParameter("@normalizedName", normalizedRoleName);
 
             Console.WriteLine(roleQuery.QueryText);
-            var roles = await ExecuteSqlQuery<TRole>(roleQuery, Context.FeedOptions).ToListAsync(cancellationToken: cancellationToken);
+            var roles = await (await ExecuteSqlQuery<TRole>(roleQuery, Context.FeedOptions)
+                        .ConfigureAwait(false))
+                        .ToListAsync(cancellationToken: cancellationToken);
             return roles.FirstOrDefault();
         }
 
@@ -209,15 +207,15 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 throw new ArgumentNullException(nameof(roleId));
             }
 
-                SqlQuerySpec query = new SqlQuerySpec("SELECT VALUE ur.roleId, ur.userId " +
+            QueryDefinition query = new QueryDefinition("SELECT VALUE ur.roleId, ur.userId " +
                     "FROM ROOT u " +
                     "JOIN ur in u.roles " +
-                    "WHERE (ur.roleId = @roleId) AND (ur.userId = @userId)", new SqlParameterCollection(){
-                    new SqlParameter("@roleId", roleId), new SqlParameter("@userId", userId)
-                });
+                    "WHERE (ur.roleId = @roleId) AND (ur.userId = @userId)")
+                .WithParameter("@roleId", roleId)
+                .WithParameter("@userId", userId);
 
                 Debug.WriteLine(query.QueryText);
-                return await ExecuteSqlQuery<Model.IdentityUserRole<string>>(query, Context.FeedOptions).SingleOrDefaultAsync();
+                return await (await ExecuteSqlQuery<Model.IdentityUserRole<string>>(query, Context.FeedOptions).ConfigureAwait(false)).SingleOrDefaultAsync();
         }
 
         protected override Task<TUser> FindUserAsync(string userId, CancellationToken cancellationToken)
@@ -292,10 +290,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         protected override async Task AddUserTokenAsync(Model.IdentityUserToken<string> token)
         {
-            var doc = await Context.Client.CreateDocumentAsync(Context.IdentityDocumentCollection.DocumentsLink, token
-                                   , Context.RequestOptions, true);
-            Context.SetSessionTokenIfEmpty(doc.SessionToken);
-            token = JsonHelpers.CreateObject<Model.IdentityUserToken<string>>(doc);
+            var doc = await Context.IdentityContainer.CreateItemAsync<Model.IdentityUserToken<string>>(token, new PartitionKey(token.PartitionKey), Context.RequestOptions);
+            Context.SetSessionTokenIfEmpty(doc.Headers.Session);
+            token = doc.Resource;
         }
 
         protected override Model.IdentityUserToken<string> CreateUserToken(TUser user, string loginProvider, string name, string value)
@@ -311,9 +308,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         protected override async Task RemoveUserTokenAsync(Model.IdentityUserToken<string> token)
         {
-            var doc = await Context.Client.DeleteDocumentAsync(token.SelfLink,
-                Context.RequestOptions);
-            Context.SetSessionTokenIfEmpty(doc.SessionToken);
+            var doc = await Context.IdentityContainer.DeleteItemAsync<Model.IdentityUserToken<string>>(token.Id, new PartitionKey(token.PartitionKey), Context.RequestOptions);
+            Context.SetSessionTokenIfEmpty(doc.Headers.Session);
         }
     }
 
@@ -373,44 +369,53 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         public TContext Context { get; private set; }
 
 
-        internal protected IEnumerable<Q> ExecuteSqlQuery<Q>(SqlQuerySpec sqlQuery, FeedOptions feedOptions = null) where Q : class
+        internal protected async Task<IEnumerable<Q>> ExecuteSqlQuery<Q>(QueryDefinition sqlQuery, QueryRequestOptions queryOptions = null) where Q : class
         {
-            if(feedOptions == null)
+#if !NETSTANDARD2_1
+            List<Q> results = new List<Q>();
+#endif
+
+            if (queryOptions == null)
             {
-                feedOptions = Context.FeedOptions;
+                queryOptions = Context.FeedOptions;
             }
 
-            var results = Context.Client.CreateDocumentQuery(Context.IdentityDocumentCollection.DocumentsLink, sqlQuery,
-                Context.FeedOptions);
-            foreach (dynamic d in results.ToList())
+            var feedIterator = Context.IdentityContainer.GetItemQueryIterator<Q>(sqlQuery, requestOptions: queryOptions);
+
+            while (feedIterator.HasMoreResults)
             {
-                Q q = d;
-                //Q q = JsonHelpers.CreateObject<Q>( d.ToString());
-                yield return q;
+                foreach (Q q in (await feedIterator.ReadNextAsync()))
+                {
+#if NETSTANDARD2_1
+                    yield return q;
+#else
+                    results.Add(q);
+#endif
+                }
             }
+#if !NETSTANDARD2_1
+            return results;
+#endif
         }
         protected IOrderedQueryable<TUser> UsersSet
         {
             get
             {
-                return Context.Client.CreateDocumentQuery<TUser>(Context.IdentityDocumentCollection.DocumentsLink,
-                 Context.FeedOptions);
+                return Context.IdentityContainer.GetItemLinqQueryable<TUser>(true);
             }
         }
         protected IOrderedQueryable<TRole> Roles
         {
             get
             {
-                return Context.Client.CreateDocumentQuery<TRole>(Context.IdentityDocumentCollection.DocumentsLink, 
-                 Context.FeedOptions);
+                return Context.IdentityContainer.GetItemLinqQueryable<TRole>(true);
             }
         }
         protected IOrderedQueryable<TUserClaim> UserClaims
         {
             get
             {
-                return Context.Client.CreateDocumentQuery<TUserClaim>(Context.IdentityDocumentCollection.DocumentsLink,
-                 Context.FeedOptions);
+                return Context.IdentityContainer.GetItemLinqQueryable<TUserClaim>(true);
             }
         }
 
@@ -418,8 +423,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             get
             {
-                return Context.Client.CreateDocumentQuery<TUserToken>(Context.IdentityDocumentCollection.DocumentsLink,
-                 Context.FeedOptions);
+                return Context.IdentityContainer.GetItemLinqQueryable<TUserToken>(true);
             }
         }
                
@@ -439,10 +443,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 throw new ArgumentNullException(nameof(user));
             }
 
-            var doc = await Context.Client.CreateDocumentAsync(Context.IdentityDocumentCollection.DocumentsLink, user
-                        , Context.RequestOptions, true);
-            Context.SetSessionTokenIfEmpty(doc.SessionToken);
-            user = JsonHelpers.CreateObject<TUser>(doc) ;
+            var doc = await Context.IdentityContainer.CreateItemAsync<TUser>(user, new PartitionKey(user.PartitionKey), Context.RequestOptions);
+            Context.SetSessionTokenIfEmpty(doc.Headers.Session);
+            user = doc.Resource;
             return IdentityResult.Success;
         }
 
@@ -464,15 +467,16 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             user.ConcurrencyStamp = Guid.NewGuid().ToString();
             try
             {
-                AccessCondition ac = new AccessCondition { Condition = user.ETag, Type = AccessConditionType.IfMatch };
-                RequestOptions ro = Context.RequestOptions;
-                //ro.AccessCondition = ac;
-                var doc = await Context.Client.ReplaceDocumentAsync(user.SelfLink, user, ro); 
-                Context.SetSessionTokenIfEmpty(doc.SessionToken);
-                user = JsonHelpers.CreateObject<TUser>(doc);
+                ItemRequestOptions ro = Context.RequestOptions;
+                //TODO: Investigate why UserManager is updating twice with different ETag
+                //ro.IfMatchEtag = user.ETag;
+
+                var doc = await Context.IdentityContainer.ReplaceItemAsync<TUser>(user, user.Id.ToString(), new PartitionKey(user.PartitionKey), ro);
+                Context.SetSessionTokenIfEmpty(doc.Headers.Session);
+                user = doc.Resource;
                 return IdentityResult.Success;
             }
-            catch (DocumentClientException dc) 
+            catch (CosmosException dc) 
             {
                 return ConcurrencyCheckResultFailed(dc);
             }
@@ -484,9 +488,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// </summary>
         /// <param name="dc"></param>
         /// <returns></returns>
-        protected IdentityResult ConcurrencyCheckResultFailed(DocumentClientException dc)
+        protected IdentityResult ConcurrencyCheckResultFailed(CosmosException dc)
         {
-            if (dc.StatusCode.HasValue && dc.StatusCode.Value == HttpStatusCode.PreconditionFailed)
+            if (dc.StatusCode == HttpStatusCode.PreconditionFailed)
             {
                 return IdentityResult.Failed(ErrorDescriber.ConcurrencyFailure());
             }
@@ -511,11 +515,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             try
             {
-                var doc = await Context.Client.DeleteDocumentAsync(user.SelfLink,
-                    Context.RequestOptions);
-                Context.SetSessionTokenIfEmpty(doc.SessionToken);
+                var doc = await Context.IdentityContainer.DeleteItemAsync<TUser>(user.Id.ToString(), new PartitionKey(user.PartitionKey), Context.RequestOptions);
+                Context.SetSessionTokenIfEmpty(doc.Headers.Session);
             }
-            catch (DocumentClientException dc)
+            catch (CosmosException dc)
             {
                 return ConcurrencyCheckResultFailed(dc);
             }
@@ -534,28 +537,15 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            return await Context.Client.ExecuteStoredProcedureAsync<IEnumerable<Document>>(Context.GetUserByIdSproc.SelfLink,
-                Context.RequestOptions,
-                new dynamic[] { userId })
-                .ContinueWith((storedProcTask) => {
-                    Context.SetSessionTokenIfEmpty(storedProcTask.Result.SessionToken);
-                    return GetUserAggregate(storedProcTask.Result.Response.ToList());
-                });
+            StoredProcedureExecuteResponse<string> response = await Context.IdentityContainer.Scripts.ExecuteStoredProcedureAsync<string>(
+                Context.GetUserByIdSproc,
+                new PartitionKey(PartitionKeyHelper.GetPartitionKeyFromId(userId)),
+                new dynamic[] { userId });
 
+            return !string.IsNullOrWhiteSpace(response.Resource) ?
+                JsonConvert.DeserializeObject<TUser>(response.Resource) : null;
+            
         }
-
-        private TUser GetUserAggregate(List<Document> userResults)
-        {
-            TUser user = default(TUser);
-            var vUser = userResults.Where(u => u.Id == u.Id).SingleOrDefault();
-
-            if (vUser != null)
-            {
-                user = (dynamic)vUser; 
-            }
-            return user;
-        }
-
 
         /// <summary>
         /// Finds and returns a user, if any, who has the specified normalized user name.
@@ -569,12 +559,16 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            return await Context.Client.ExecuteStoredProcedureAsync<IEnumerable<Document>>(Context.GetUserByUserNameSproc.SelfLink,
-                                Context.RequestOptions,
-                                new dynamic[] { normalizedUserName }).ContinueWith((storedProcTask) => {
-                                    Context.SetSessionTokenIfEmpty(storedProcTask.Result.SessionToken);
-                                    return GetUserAggregate(storedProcTask.Result.Response.ToList());
-                                });
+
+            //TODO: Deprecate Stored Proc: getUserByUserName_v1
+            QueryDefinition query = new QueryDefinition("SELECT * FROM root r " +
+                "WHERE (r.normalizedUserName = @normalizedName) ")
+                .WithParameter("@normalizedName", normalizedUserName);
+
+            Console.WriteLine(query.QueryText);
+            return await (await ExecuteSqlQuery<TUser>(query, Context.FeedOptions)
+                                .ConfigureAwait(false))
+                                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
         }
 
         /// <summary>
@@ -649,14 +643,13 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         protected async Task<string> GetRoleIdByNormalizedNameAsync(string normalizedRoleName, CancellationToken cancellationToken = default(CancellationToken))
         {
-            SqlQuerySpec roleQuery = new SqlQuerySpec("SELECT VALUE r.id " +
+            QueryDefinition roleQuery = new QueryDefinition("SELECT VALUE r.id " +
                 "FROM ROOT r " +
-                "WHERE (r.normalizedName = @normalizedName) ", new SqlParameterCollection(){
-                            new SqlParameter("@normalizedName", normalizedRoleName)
-            });
+                "WHERE (r.normalizedName = @normalizedName) ")
+                .WithParameter("@normalizedName", normalizedRoleName);
 
             Console.WriteLine(roleQuery.QueryText);
-            var roleIds = await ExecuteSqlQuery<String>(roleQuery, Context.FeedOptions).ToListAsync(cancellationToken: cancellationToken);
+            var roleIds = await (await ExecuteSqlQuery<String>(roleQuery, Context.FeedOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
             return roleIds.FirstOrDefault();
         }
 
@@ -856,11 +849,17 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            var result = await Context.Client.ExecuteStoredProcedureAsync<IEnumerable<Document>>(Context.GetUserByLoginSproc.SelfLink,
-                    Context.RequestOptions,
-                    new dynamic[] { loginProvider, providerKey });
-            Context.SetSessionTokenIfEmpty(result.SessionToken);
-            return GetUserAggregate(result.Response.ToList());
+            //TODO: Deprecate Stored Proc: getUserByLogin_v1
+            QueryDefinition query = new QueryDefinition("SELECT VALUE r FROM root r JOIN l IN r.logins " +
+                "WHERE l.loginProvider = @loginProvider " +
+                "AND l.providerKey = @providerKey ")
+                .WithParameter("@loginProvider", loginProvider)
+                .WithParameter("@providerKey", providerKey);
+
+            Console.WriteLine(query.QueryText);
+            return await (await ExecuteSqlQuery<TUser>(query, Context.FeedOptions)
+                                .ConfigureAwait(false))
+                                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
         }
      
 
@@ -876,20 +875,31 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            return await Context.Client.ExecuteStoredProcedureAsync<IEnumerable<Document>>(Context.GetUserByEmailSproc.SelfLink,
-                                Context.RequestOptions,
-                                new dynamic[] { normalizedEmail }).ContinueWith((storedProcTask) => {
-                                    Context.SetSessionTokenIfEmpty(storedProcTask.Result.SessionToken);
-                                    return GetUserAggregate(storedProcTask.Result.Response.ToList());
-                                });
+            //TODO: Deprecate Stored Proc: getUserByEmail_v1
+            QueryDefinition query = new QueryDefinition("SELECT * FROM root r " +
+                "WHERE (r.normalizedEmail = @normalizedEmail) ")
+                .WithParameter("@normalizedEmail", normalizedEmail);
+
+            Console.WriteLine(query.QueryText);
+            return await (await ExecuteSqlQuery<TUser>(query, Context.FeedOptions)
+                                .ConfigureAwait(false))
+                                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
         }
 
-        public async virtual Task<IList<TUser>> FindAllByEmailAsync(string email, CancellationToken cancellationToken = default(CancellationToken))
+        public async virtual Task<IList<TUser>> FindAllByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            return await Users.ToListAsync(where:u => u.Email == email, cancellationToken: cancellationToken);
-        }            
+            
+            QueryDefinition query = new QueryDefinition("SELECT * FROM root r " +
+                "WHERE (r.normalizedEmail = @normalizedEmail) ")
+                .WithParameter("@normalizedEmail", normalizedEmail);
+
+            Console.WriteLine(query.QueryText);
+            return await (await ExecuteSqlQuery<TUser>(query, Context.FeedOptions)
+                                .ConfigureAwait(false))
+                                .ToListAsync(cancellationToken: cancellationToken);
+        }
 
     }
 }

@@ -11,7 +11,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
     public static class Constants
     {
 
-        public static class DocumentCollectionIds
+        public static class ContainerIds
         {
             public const string DefaultIdentityCollection = "identity";
         }

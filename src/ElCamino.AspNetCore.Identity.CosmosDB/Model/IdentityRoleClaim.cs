@@ -1,6 +1,5 @@
 // MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 
-using Microsoft.Azure.Documents;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;

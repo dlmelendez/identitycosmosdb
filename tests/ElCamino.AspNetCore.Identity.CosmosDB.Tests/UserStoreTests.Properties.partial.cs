@@ -6,13 +6,13 @@ using Microsoft.AspNetCore.Identity;
 using ElCamino.AspNetCore.Identity.CosmosDB.Model;
 using Newtonsoft.Json;
 using System.Diagnostics;
-using Microsoft.Azure.Documents.Linq;
 using System.Linq;
 using System.Threading;
 using ElCamino.AspNetCore.Identity.CosmosDB.Tests.ModelTests;
 using System.Security.Claims;
 using IdentityRole = ElCamino.AspNetCore.Identity.CosmosDB.Model.IdentityRole;
 using IdentityUser = ElCamino.AspNetCore.Identity.CosmosDB.Model.IdentityUser;
+using System.Threading.Tasks;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 {
@@ -23,69 +23,55 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("UserStore.Properties")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void AccessFailedCount(bool includeRoles)
+        public async Task AccessFailedCount(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
-            var user = CreateTestUser<ApplicationUser>(includeRoles);
-            var taskUser = manager.GetAccessFailedCountAsync(user);
+            var user = await CreateTestUser<ApplicationUser>(includeRoles);
+            var taskUser = await manager.GetAccessFailedCountAsync(user);
+            Assert.AreEqual<int>(user.AccessFailedCount, taskUser);
 
-            taskUser.Wait();
-            Assert.AreEqual<int>(user.AccessFailedCount, taskUser.Result);
+            var taskAccessFailed = await manager.AccessFailedAsync(user);
+            Assert.IsTrue(taskAccessFailed.Succeeded, string.Concat(taskAccessFailed.Errors.Select(e => e.Code).ToArray()));
 
-            var taskAccessFailed = manager.AccessFailedAsync(user);
+            user = await manager.FindByIdAsync(user.Id);
 
-            taskAccessFailed.Wait();
+            var taskAccessReset = await manager.ResetAccessFailedCountAsync(user);
+            Assert.IsTrue(taskAccessReset.Succeeded, string.Concat(taskAccessReset.Errors));
 
-            Assert.IsTrue(taskAccessFailed.Result.Succeeded, string.Concat(taskAccessFailed.Result.Errors.Select(e => e.Code).ToArray()));
-
-            var userTaskFindById = manager.FindByIdAsync(user.Id);
-            userTaskFindById.Wait();
-            user = userTaskFindById.Result;
-
-            var taskAccessReset = manager.ResetAccessFailedCountAsync(user);
-
-            taskAccessReset.Wait();
-            Assert.IsTrue(taskAccessReset.Result.Succeeded, string.Concat(taskAccessReset.Result.Errors));
-
-            Assert.ThrowsException<ArgumentNullException>(() => store.GetAccessFailedCountAsync(null).Wait());
-            Assert.ThrowsException<ArgumentNullException>(() => store.IncrementAccessFailedCountAsync(null).Wait());
-            Assert.ThrowsException<ArgumentNullException>(() => store.ResetAccessFailedCountAsync(null).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.GetAccessFailedCountAsync(null));
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.IncrementAccessFailedCountAsync(null));
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.ResetAccessFailedCountAsync(null));
         }
 
-        private void SetValidateEmail(UserManager<ApplicationUser> manager,
+        private async Task SetValidateEmail(UserManager<ApplicationUser> manager,
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store,
             ApplicationUser user,
             string strNewEmail)
         {
             string originalEmail = user.Email;
-            var taskUserSet = manager.SetEmailAsync(user, strNewEmail);
+            var taskUserSet = await manager.SetEmailAsync(user, strNewEmail);
 
-            taskUserSet.Wait();
-            Assert.IsTrue(taskUserSet.Result.Succeeded, string.Concat(taskUserSet.Result.Errors));
+            Assert.IsTrue(taskUserSet.Succeeded, string.Concat(taskUserSet.Errors));
 
-            var taskUser = manager.GetEmailAsync(user);
-
-            taskUser.Wait();
-            Assert.AreEqual<string>(strNewEmail, taskUser.Result);
+            var taskUser = await manager.GetEmailAsync(user);
+            Assert.AreEqual<string>(strNewEmail, taskUser);
 
             if (!string.IsNullOrWhiteSpace(strNewEmail))
             {
-                var taskFind = manager.FindByEmailAsync(strNewEmail);
-                taskFind.Wait();
-                Assert.AreEqual<string>(strNewEmail, taskFind.Result.Email);
+                var taskFind = await manager.FindByEmailAsync(strNewEmail);
+                Assert.AreEqual<string>(strNewEmail, taskFind.Email);
             }
             else
             {
-                var noEmailUser = manager.FindByIdAsync(user.Id).Result;
+                var noEmailUser = await manager.FindByIdAsync(user.Id);
                 Assert.IsTrue(string.IsNullOrWhiteSpace(noEmailUser.Email));
             }
             //Should not find old by old email.
             if (!string.IsNullOrWhiteSpace(originalEmail))
             {
-                var taskFind = manager.FindByEmailAsync(originalEmail);
-                taskFind.Wait();
-                Assert.IsNull(taskFind.Result);
+                var taskFind = await manager.FindByEmailAsync(originalEmail);
+                Assert.IsNull(taskFind);
             }
 
         }
@@ -94,15 +80,15 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("UserStore.Properties")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void EmailNone(bool includeRoles)
+        public async Task EmailNone(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
-            var user = CreateTestUser<ApplicationUser>(false, false);
+            var user = await CreateTestUser<ApplicationUser>(false, false);
             string strNewEmail = string.Format("{0}@hotmail.com", Guid.NewGuid().ToString("N"));
-            SetValidateEmail(manager, store, user, strNewEmail);
+            await SetValidateEmail(manager, store, user, strNewEmail);
 
-            SetValidateEmail(manager, store, user, string.Empty);
+            await SetValidateEmail(manager, store, user, string.Empty);
 
         }
 
@@ -110,18 +96,18 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("UserStore.Properties")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void Email(bool includeRoles)
+        public async Task Email(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
-            var user = CurrentUser(includeRoles);
+            var user = await CurrentUser(includeRoles);
 
             string strNewEmail = string.Format("{0}@gmail.com", Guid.NewGuid().ToString("N"));
-            SetValidateEmail(manager, store, user, strNewEmail);
+            await SetValidateEmail(manager, store, user, strNewEmail);
 
-            Assert.ThrowsException<ArgumentNullException>(() => store.GetEmailAsync(null).Wait());
-            Assert.ThrowsException<ArgumentNullException>(() => store.SetEmailAsync(null, strNewEmail).Wait());
-            store.SetEmailAsync(user, null).Wait();
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => store.GetEmailAsync(null));
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => store.SetEmailAsync(null, strNewEmail));
+            await store.SetEmailAsync(user, null);
             Assert.IsNull(user.Email);
         }
 
@@ -130,36 +116,26 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("UserStore.Properties")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void EmailConfirmed(bool includeRoles)
+        public async Task EmailConfirmed(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
-            var user = CreateTestUser<ApplicationUser>(includeRoles);
+            var user = await CreateTestUser<ApplicationUser>(includeRoles);
 
 
-            var taskUserSet = manager.GenerateEmailConfirmationTokenAsync(user);
-
-            taskUserSet.Wait();
-            Assert.IsFalse(string.IsNullOrWhiteSpace(taskUserSet.Result), "GenerateEmailConfirmationToken failed.");
-            string token = taskUserSet.Result;
-
-
-            var taskConfirm = manager.ConfirmEmailAsync(user, token);
-
-            taskConfirm.Wait();
-            Assert.IsTrue(taskConfirm.Result.Succeeded, string.Concat(taskConfirm.Result.Errors));
+            string token = await manager.GenerateEmailConfirmationTokenAsync(user);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(token), "GenerateEmailConfirmationToken failed.");
+            var taskConfirm = await manager.ConfirmEmailAsync(user, token);
+            Assert.IsTrue(taskConfirm.Succeeded, string.Concat(taskConfirm.Errors));
 
 
-            var userTask02 = manager.FindByEmailAsync(user.Email);
-            userTask02.Wait();
-            user = userTask02.Result;
+            user = await manager.FindByEmailAsync(user.Email);
 
-            var taskConfirmGet = store.GetEmailConfirmedAsync(user);
-            taskConfirmGet.Wait();
-            Assert.IsTrue(taskConfirmGet.Result, "Email not confirmed");
+            var taskConfirmGet = await store.GetEmailConfirmedAsync(user);
+            Assert.IsTrue(taskConfirmGet, "Email not confirmed");
 
-            Assert.ThrowsException<ArgumentNullException>(() => store.SetEmailConfirmedAsync(null, true).Wait());
-            Assert.ThrowsException<ArgumentNullException>(() => store.GetEmailConfirmedAsync(null).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.SetEmailConfirmedAsync(null, true));
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.GetEmailConfirmedAsync(null));
 
         }
 
@@ -167,85 +143,70 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("UserStore.Properties")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void LockoutEnabled(bool includeRoles)
+        public async Task LockoutEnabled(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
-            var user = CurrentUser(includeRoles);
+            var user = await CurrentUser(includeRoles);
 
-            var taskLockoutSet = manager.SetLockoutEnabledAsync(user, true);
-
-            taskLockoutSet.Wait();
-            Assert.IsTrue(taskLockoutSet.Result.Succeeded, string.Concat(taskLockoutSet.Result.Errors));
+            var taskLockoutSet = await manager.SetLockoutEnabledAsync(user, true);
+            Assert.IsTrue(taskLockoutSet.Succeeded, string.Concat(taskLockoutSet.Errors));
 
 
             DateTimeOffset offSet = new DateTimeOffset(DateTime.Now.AddMinutes(3));
-            var taskDateSet = manager.SetLockoutEndDateAsync(user, offSet);
-
-            taskDateSet.Wait();
-            Assert.IsTrue(taskDateSet.Result.Succeeded, string.Concat(taskDateSet.Result.Errors));
+            var taskDateSet = await manager.SetLockoutEndDateAsync(user, offSet);
+            Assert.IsTrue(taskDateSet.Succeeded, string.Concat(taskDateSet.Errors));
 
 
-            var taskEnabledGet = manager.GetLockoutEnabledAsync(user);
-
-            taskEnabledGet.Wait();
-            Assert.IsTrue(taskEnabledGet.Result, "Lockout not true");
+            var taskEnabledGet = await manager.GetLockoutEnabledAsync(user);
+            Assert.IsTrue(taskEnabledGet, "Lockout not true");
 
 
-            var taskDateGet = manager.GetLockoutEndDateAsync(user);
-
-            taskDateGet.Wait();
-            Assert.AreEqual(offSet, taskDateGet.Result);
+            var taskDateGet = await manager.GetLockoutEndDateAsync(user);
+            Assert.AreEqual(offSet, taskDateGet);
 
             DateTime tmpDate = DateTime.UtcNow.AddDays(1);
             user.LockoutEnd = tmpDate;
-            var taskGet = store.GetLockoutEndDateAsync(user);
-            taskGet.Wait();
-
-            Assert.AreEqual<DateTimeOffset?>(new DateTimeOffset?(tmpDate), taskGet.Result);
+            var taskGet = await store.GetLockoutEndDateAsync(user);
+            Assert.AreEqual<DateTimeOffset?>(new DateTimeOffset?(tmpDate), taskGet);
 
 
             user.LockoutEnd = null;
-            var taskGet2 = store.GetLockoutEndDateAsync(user);
-            taskGet2.Wait();
-            Assert.AreEqual<DateTimeOffset?>(new DateTimeOffset?(), taskGet2.Result);
+            var taskGet2 = await store.GetLockoutEndDateAsync(user);
+            Assert.AreEqual<DateTimeOffset?>(new DateTimeOffset?(), taskGet2);
 
 
             var minOffSet = DateTimeOffset.MinValue;
-            var taskSet2 = store.SetLockoutEndDateAsync(user, minOffSet);
-            taskSet2.Wait();
+            await store.SetLockoutEndDateAsync(user, minOffSet);
             Assert.IsNotNull(user.LockoutEnd);
-            Assert.ThrowsException<ArgumentNullException>(() => store.GetLockoutEnabledAsync(null).Wait());
-            Assert.ThrowsException<ArgumentNullException>(() => store.GetLockoutEndDateAsync(null).Wait());
-            Assert.ThrowsException<ArgumentNullException>(() => store.SetLockoutEndDateAsync(null, offSet).Wait());
-            Assert.ThrowsException<ArgumentNullException>(() => store.SetLockoutEnabledAsync(null, false).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.GetLockoutEnabledAsync(null));
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.GetLockoutEndDateAsync(null));
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.SetLockoutEndDateAsync(null, offSet));
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.SetLockoutEnabledAsync(null, false));
         }
 
         [TestMethod]
         [TestCategory("UserStore.Properties")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void PhoneNumber(bool includeRoles)
+        public async Task PhoneNumber(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
-            var user = CurrentUser(includeRoles);
+            var user = await CurrentUser(includeRoles);
 
             string strNewPhoneNumber = "542-887-3434";
 
-            var taskPhoneNumberSet = manager.SetPhoneNumberAsync(user, strNewPhoneNumber);
-
-            taskPhoneNumberSet.Wait();
-            Assert.IsTrue(taskPhoneNumberSet.Result.Succeeded, string.Concat(taskPhoneNumberSet.Result.Errors));
+            var taskPhoneNumberSet = await manager.SetPhoneNumberAsync(user, strNewPhoneNumber);
+            Assert.IsTrue(taskPhoneNumberSet.Succeeded, string.Concat(taskPhoneNumberSet.Errors));
 
 
-            var taskUser = manager.GetPhoneNumberAsync(user);
-            taskUser.Wait();
-            Assert.AreEqual<string>(strNewPhoneNumber, taskUser.Result);
+            var taskUser = await manager.GetPhoneNumberAsync(user);
+            Assert.AreEqual<string>(strNewPhoneNumber, taskUser);
 
-            Assert.ThrowsException<ArgumentNullException>(() => store.GetPhoneNumberAsync(null).Wait());
-            Assert.ThrowsException<ArgumentNullException>(() => store.SetPhoneNumberAsync(null, strNewPhoneNumber).Wait());
-            store.SetPhoneNumberAsync(user, null).Wait();
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.GetPhoneNumberAsync(null));
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.SetPhoneNumberAsync(null, strNewPhoneNumber));
+            await store.SetPhoneNumberAsync(user, null);
             Assert.IsNull(user.PhoneNumber);
         }
 
@@ -253,36 +214,29 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("UserStore.Properties")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void PhoneNumberConfirmed(bool includeRoles)
+        public async Task PhoneNumberConfirmed(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
-            var user = CreateTestUser<ApplicationUser>(includeRoles);
+            var user = await CreateTestUser<ApplicationUser>(includeRoles);
             string strNewPhoneNumber = "425-555-1111";
 
-            var taskUserSet = manager.GenerateChangePhoneNumberTokenAsync(user, strNewPhoneNumber);
+            string token = await manager.GenerateChangePhoneNumberTokenAsync(user, strNewPhoneNumber);
 
-            taskUserSet.Wait();
-            Assert.IsFalse(string.IsNullOrWhiteSpace(taskUserSet.Result), "GeneratePhoneConfirmationToken failed.");
-            string token = taskUserSet.Result;
+            Assert.IsFalse(string.IsNullOrWhiteSpace(token), "GeneratePhoneConfirmationToken failed.");
 
 
-            var taskConfirm = manager.ChangePhoneNumberAsync(user, strNewPhoneNumber, token);
-
-            taskConfirm.Wait();
-            Assert.IsTrue(taskConfirm.Result.Succeeded, string.Concat(taskConfirm.Result.Errors));
+            var taskConfirm = await manager.ChangePhoneNumberAsync(user, strNewPhoneNumber, token);
+            Assert.IsTrue(taskConfirm.Succeeded, string.Concat(taskConfirm.Errors));
 
 
-            var uTask01 = manager.FindByEmailAsync(user.Email);
-            uTask01.Wait();
-            user = uTask01.Result;
+            user = await manager.FindByEmailAsync(user.Email);
 
-            var taskConfirmGet = store.GetPhoneNumberConfirmedAsync(user);
-            taskConfirmGet.Wait();
-            Assert.IsTrue(taskConfirmGet.Result, "Phone not confirmed");
+            var taskConfirmGet = await store.GetPhoneNumberConfirmedAsync(user);
+            Assert.IsTrue(taskConfirmGet, "Phone not confirmed");
 
-            Assert.ThrowsException<ArgumentNullException>(() => store.SetPhoneNumberConfirmedAsync(null, true).Wait());
-            Assert.ThrowsException<ArgumentNullException>(() => store.GetPhoneNumberConfirmedAsync(null).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.SetPhoneNumberConfirmedAsync(null, true));
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.GetPhoneNumberConfirmedAsync(null));
 
         }
 
@@ -290,26 +244,22 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("UserStore.Properties")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void TwoFactorEnabled(bool includeRoles)
+        public async Task TwoFactorEnabled(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
-            var user = CurrentUser(includeRoles);
+            var user = await CurrentUser(includeRoles);
 
             bool twoFactorEnabled = true;
 
-            var taskTwoFactorEnabledSet = manager.SetTwoFactorEnabledAsync(user, twoFactorEnabled);
+            var taskTwoFactorEnabledSet = await manager.SetTwoFactorEnabledAsync(user, twoFactorEnabled);
+            Assert.IsTrue(taskTwoFactorEnabledSet.Succeeded, string.Concat(taskTwoFactorEnabledSet.Errors));
 
-            taskTwoFactorEnabledSet.Wait();
-            Assert.IsTrue(taskTwoFactorEnabledSet.Result.Succeeded, string.Concat(taskTwoFactorEnabledSet.Result.Errors));
+            var taskUser = await manager.GetTwoFactorEnabledAsync(user);
+            Assert.AreEqual<bool>(twoFactorEnabled, taskUser);
 
-            var taskUser = manager.GetTwoFactorEnabledAsync(user);
-
-            taskUser.Wait();
-            Assert.AreEqual<bool>(twoFactorEnabled, taskUser.Result);
-
-            Assert.ThrowsException<ArgumentNullException>(() => store.GetTwoFactorEnabledAsync(null).Wait());
-            Assert.ThrowsException<ArgumentNullException>(() => store.SetTwoFactorEnabledAsync(null, twoFactorEnabled).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.GetTwoFactorEnabledAsync(null));
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.SetTwoFactorEnabledAsync(null, twoFactorEnabled));
 
         }
 
@@ -317,33 +267,30 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("UserStore.Properties")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void PasswordHash(bool includeRoles)
+        public async Task PasswordHash(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
-            var user = CurrentUser(includeRoles);
+            var user = await CurrentUser(includeRoles);
             string passwordPlain = Guid.NewGuid().ToString("N");
 
             string passwordHash = new PasswordHasher<ApplicationUser>().HashPassword(user, passwordPlain);
 
-            var taskUserSet = store.SetPasswordHashAsync(user, passwordHash);
-            taskUserSet.Wait();
+            await store.SetPasswordHashAsync(user, passwordHash);
 
-            var taskHasHash = manager.HasPasswordAsync(user);
+            var taskHasHash = await manager.HasPasswordAsync(user);
 
-            taskHasHash.Wait();
-            Assert.IsTrue(taskHasHash.Result, "PasswordHash not set");
+            Assert.IsTrue(taskHasHash, "PasswordHash not set");
 
-            var taskUser = store.GetPasswordHashAsync(user);
-            taskUser.Wait();
-            Assert.AreEqual<string>(passwordHash, taskUser.Result);
+            var taskUser = await store.GetPasswordHashAsync(user);
+            Assert.AreEqual<string>(passwordHash, taskUser);
             user.PasswordHash = passwordHash;
 
-            Assert.ThrowsException<ArgumentNullException>(() => store.GetPasswordHashAsync(null).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.GetPasswordHashAsync(null));
 
-            Assert.ThrowsException<ArgumentNullException>(() => store.SetPasswordHashAsync(null, passwordHash).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.SetPasswordHashAsync(null, passwordHash));
 
-            store.SetPasswordHashAsync(user, null).Wait();
+            await store.SetPasswordHashAsync(user, null);
             Assert.IsNull(user.PasswordHash);
         }
 
@@ -351,7 +298,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("UserStore.Properties")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void UsersProperty(bool includeRoles)
+        public async Task UsersProperty(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
@@ -365,14 +312,15 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Console.WriteLine("");
 
             string email = "A" + Guid.NewGuid().ToString() + "@gmail.com";
-            CreateTestUser<ApplicationUser>(includeRoles, true, true, email);
+            await CreateTestUser<ApplicationUser>(includeRoles, true, true, email);
 
             DateTime start3 = DateTime.UtcNow;
-            var list3 = manager.Users.Where(w=> w.Email != null).Select(s => s.Email).ToList();
+            var list3 = manager.Users.Where(w=> w.Email == email).Select(s => s.Email).ToList();
 
             Console.WriteLine("UserQuery: {0} seconds", (DateTime.UtcNow - start3).TotalSeconds);
             Console.WriteLine("UserQuery.Email: {0} users", list3.Count());
             Console.WriteLine("");
+            Assert.AreEqual<int>(1, list3.Count());
 
             DateTime start4 = DateTime.UtcNow;
             var list4 = manager.Users.Select(s => s).ToList();
@@ -426,7 +374,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Console.WriteLine("");
 
 
-            Assert.ThrowsException<AggregateException>(() => manager.Users.Select(s => s.Email).FirstOrDefault());
+            Assert.IsNotNull(manager.Users.Select(s => s.Email).ToList().FirstOrDefault());
 
             
             Assert.IsNotNull(store.Users);
@@ -437,24 +385,22 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("UserStore.Properties")]
         [DataRow(true, DisplayName = "IncludeRoleProvider")]
         [DataRow(false, DisplayName = "NoRoleProvider")]
-        public void SecurityStamp(bool includeRoles)
+        public async Task SecurityStamp(bool includeRoles)
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
-            var user = CreateTestUser<ApplicationUser>(includeRoles);
+            var user = await CreateTestUser<ApplicationUser>(includeRoles);
 
-            var taskUser = manager.GetSecurityStampAsync(user);
+            var taskUser = await manager.GetSecurityStampAsync(user);
 
-            taskUser.Wait();
-            Assert.AreEqual<string>(user.SecurityStamp, taskUser.Result);
+            Assert.AreEqual<string>(user.SecurityStamp, taskUser);
 
             string strNewSecurityStamp = Guid.NewGuid().ToString("N");
-            var taskUserSet = store.SetSecurityStampAsync(user, strNewSecurityStamp);
-            taskUserSet.Wait();
+            await store.SetSecurityStampAsync(user, strNewSecurityStamp);
 
-            Assert.ThrowsException<ArgumentNullException>(() => store.GetSecurityStampAsync(null).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.GetSecurityStampAsync(null));
 
-            Assert.ThrowsException<ArgumentNullException>(() => store.SetSecurityStampAsync(null, strNewSecurityStamp).Wait());
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.SetSecurityStampAsync(null, strNewSecurityStamp));
 
         }
 

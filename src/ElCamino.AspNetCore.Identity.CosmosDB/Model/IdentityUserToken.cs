@@ -3,7 +3,7 @@
 using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using Microsoft.Azure.Documents;
+using ElCamino.AspNetCore.Identity.CosmosDB.Helpers;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB.Model
 {
@@ -21,26 +21,31 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Model
     public class IdentityUserToken<TKey> : Microsoft.AspNetCore.Identity.IdentityUserToken<TKey>,
         IResource<TKey> where TKey : IEquatable<TKey>
     {
+        private TKey _Id;
 
         [JsonProperty(PropertyName = "id")]
-        public TKey Id { get; set; }
+        public TKey Id
+        {
+            get => _Id;
+            set
+            {
+                _Id = value;
+                SetPartitionKey();
+            }
+        }
+
+        public void SetPartitionKey()
+        {
+            PartitionKey = PartitionKeyHelper.GetPartitionKeyFromId(Id?.ToString());
+        }
 
         [JsonProperty(PropertyName = "_rid")]
         public virtual string ResourceId { get; set; }
 
-        [JsonProperty(PropertyName = "_self")]
-        public virtual string SelfLink { get; set; }
-
-        [JsonIgnore]
-        public string AltLink { get; set; }
-
-        [JsonConverter(typeof(UnixDateTimeConverter))]
-        [JsonProperty(PropertyName = "_ts")]
-        public virtual DateTime Timestamp { get; set; }
-
         [JsonProperty(PropertyName = "_etag")]
         public virtual string ETag { get; set; }
 
+        public string PartitionKey { get; set; }
 
 
         [JsonProperty("userId")]

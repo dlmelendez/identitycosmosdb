@@ -12,7 +12,12 @@ function getUserByEmail_v1(normalizedEmail) {
         emailQuery,
         function (err, feed, options) {
             if (err) throw err;
-            getContext().getResponse().setBody(feed);
+            if (!feed || !feed.length) {
+                getContext().getResponse().setBody("no docs found");
+            }
+            else {
+                getContext().getResponse().setBody(prefix + JSON.stringify(feed[0]));
+            }
         });
 
 }
