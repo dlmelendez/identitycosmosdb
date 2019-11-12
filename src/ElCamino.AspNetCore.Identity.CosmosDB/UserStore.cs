@@ -215,7 +215,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@userId", userId);
 
                 Debug.WriteLine(query.QueryText);
-                return await (await ExecuteSqlQuery<Model.IdentityUserRole<string>>(query, Context.QueryOptions).ConfigureAwait(false)).SingleOrDefaultAsync();
+                return await ExecuteSqlQueryFirst<Model.IdentityUserRole<string>>(query, Context.QueryOptions).ConfigureAwait(false);
         }
 
         protected override Task<TUser> FindUserAsync(string userId, CancellationToken cancellationToken)
@@ -361,7 +361,6 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             ErrorDescriber = describer ?? new IdentityErrorDescriber();
         }
 
-        //private bool _disposed;
 
         /// <summary>
         /// Gets the database context for this store.
@@ -397,6 +396,26 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             return results;
 #endif
         }
+
+        internal protected async Task<Q> ExecuteSqlQueryFirst<Q>(QueryDefinition sqlQuery, QueryRequestOptions queryOptions = null) where Q : class
+        {
+            if (queryOptions == null)
+            {
+                queryOptions = Context.QueryOptions;
+                queryOptions.MaxConcurrency = 0; //max
+                queryOptions.MaxItemCount = 1;
+            }
+
+            var feedIterator = Context.IdentityContainer.GetItemQueryIterator<Q>(sqlQuery, requestOptions: queryOptions);
+
+            if (feedIterator.HasMoreResults)
+            {
+                return (await feedIterator.ReadNextAsync()).FirstOrDefault();
+            }
+
+            return null;
+        }
+
         protected IOrderedQueryable<TUser> UsersSet
         {
             get
@@ -566,9 +585,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@normalizedName", normalizedUserName);
 
             Console.WriteLine(query.QueryText);
-            return await (await ExecuteSqlQuery<TUser>(query, Context.QueryOptions)
-                                .ConfigureAwait(false))
-                                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+            return await ExecuteSqlQueryFirst<TUser>(query, Context.QueryOptions)
+                                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -857,9 +875,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@providerKey", providerKey);
 
             Console.WriteLine(query.QueryText);
-            return await (await ExecuteSqlQuery<TUser>(query, Context.QueryOptions)
-                                .ConfigureAwait(false))
-                                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+            return await ExecuteSqlQueryFirst<TUser>(query, Context.QueryOptions)
+                                .ConfigureAwait(false);
         }
      
 
@@ -881,9 +898,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@normalizedEmail", normalizedEmail);
 
             Console.WriteLine(query.QueryText);
-            return await (await ExecuteSqlQuery<TUser>(query, Context.QueryOptions)
-                                .ConfigureAwait(false))
-                                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+            return await ExecuteSqlQueryFirst<TUser>(query, Context.QueryOptions)
+                                .ConfigureAwait(false);
         }
 
         public async virtual Task<IList<TUser>> FindAllByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default(CancellationToken))
