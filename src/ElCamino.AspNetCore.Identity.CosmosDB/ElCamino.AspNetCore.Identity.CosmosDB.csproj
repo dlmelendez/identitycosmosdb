@@ -1,0 +1,64 @@
+﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+  <PropertyGroup>
+    <Description>Azure CosmosDB Provider to support AspNet Identity Core frameworks for .NET.</Description>
+    <Copyright>Copyright © 2019 David Melendez, MIT License</Copyright>
+    <AssemblyTitle>Azure CosmosDB Provider for ASP.NET Identity Core</AssemblyTitle>
+    <Authors>David Melendez</Authors>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+    <AssemblyName>ElCamino.AspNetCore.Identity.CosmosDB</AssemblyName>
+    <AssemblyOriginatorKeyFile>../../tools/Key.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
+    <PackageId>ElCamino.AspNetCore.Identity.CosmosDB</PackageId>
+    <PackageTags>ASP.NET;Identity Core;Azure;CosmosDB;MVC;UserStore;RoleStore;UserManager;Microsoft.AspNetCore.Identity</PackageTags>
+    <PackageReleaseNotes>
+      Check https://github.com/dlmelendez/identitycosmosdb/releases for the latest release information.
+
+    </PackageReleaseNotes>
+    <PackageIcon>projectNugetPic.png</PackageIcon>
+    <PackageLicenseUrl></PackageLicenseUrl>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/dlmelendez/identitycosmosdb.git</RepositoryUrl>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Version>3.0.0</Version>
+    <AssemblyVersion>3.0.0.0</AssemblyVersion>
+    <FileVersion>3.0.0.0</FileVersion>
+    <PackageProjectUrl>https://github.com/dlmelendez/identitycosmosdb</PackageProjectUrl>
+    <DebugType>Full</DebugType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.4.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="2.2.0" />
+    <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="StoredProcs\getUserById_sproc.js">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Resources.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="projectNugetPic.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

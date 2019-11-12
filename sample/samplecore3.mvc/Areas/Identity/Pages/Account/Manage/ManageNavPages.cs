@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using IdentityUser = ElCamino.AspNetCore.Identity.DocumentDB.Model.IdentityUser;
+using IdentityUser = ElCamino.AspNetCore.Identity.CosmosDB.Model.IdentityUser;
 
 namespace samplecore3.mvc.Areas.Identity.Pages.Account.Manage
 {

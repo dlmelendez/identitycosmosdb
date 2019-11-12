@@ -7,7 +7,7 @@
 
 
   <ItemGroup>
-    <PackageReference Include="ElCamino.AspNetCore.Identity.DocumentDB" Version="2.2.0" />
+    <PackageReference Include="ElCamino.AspNetCore.Identity.CosmosDB" Version="3.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="3.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="3.0.0" />

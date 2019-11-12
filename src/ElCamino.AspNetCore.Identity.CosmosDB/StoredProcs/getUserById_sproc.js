@@ -1,0 +1,24 @@
+﻿// MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
+
+/// <reference group="Generic" /> 
+/// <reference path="C:\Program Files (x86)\Microsoft Visual Studio 12.0\JavaScript\References\DocDbWrapperScript.js" /> 
+/// http://dl.windowsazure.com/documentDB/jsserverdocs/
+
+function getUserById_v1(userid) {
+    var collection = getContext().getCollection();
+    //Query documents by UserId 
+    var isAccepted = collection.queryDocuments(
+        collection.getSelfLink(),
+        'SELECT * FROM root r WHERE r.id = "' + userid + '"',
+        function (err, feed, options) {
+            if (err) throw err;
+            if (!feed || !feed.length) {
+                getContext().getResponse().setBody("");
+            }
+            else {
+                getContext().getResponse().setBody(JSON.stringify(feed[0]));
+            }
+        });
+
+}
+
