@@ -423,7 +423,6 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Console.WriteLine("UpdateAsync(ChangeUserName): {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
 
             Assert.IsTrue(taskUserUpdate.Succeeded, string.Concat(taskUserUpdate.Errors));
-            await Task.Delay(200);
             var changedUser = await manager.FindByNameAsync(userNameChange);
 
             Console.WriteLine("{0}", "Changed User");
@@ -870,8 +869,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Console.WriteLine("IsInRoleAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
             Assert.IsTrue(roles2Task, "Role not found");
 
-            await Assert.ThrowsExceptionAsync<ArgumentException>(async () => await store.IsInRoleAsync(null, roleName));
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.IsInRoleAsync(user, null));
+            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.IsInRoleAsync(null, roleName));
+            await Assert.ThrowsExceptionAsync<ArgumentException>(async () => await store.IsInRoleAsync(user, null));
            
         }
 
