@@ -85,7 +85,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             }
             
             builder.AddCosmosDBStores<TContext>(() => GetConfig())
-            .AddDefaultTokenProviders();
+                .CreateCosmosDBIfNotExists<TContext>()
+                .AddDefaultTokenProviders();
             builder.Services.AddDataProtection();
             builder.Services.AddLogging();
 

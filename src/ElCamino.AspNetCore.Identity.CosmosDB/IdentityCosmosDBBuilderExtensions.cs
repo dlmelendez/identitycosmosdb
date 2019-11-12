@@ -37,6 +37,17 @@ namespace Microsoft.Extensions.DependencyInjection
             return builder;
 		}
 
-		
+        public static IdentityBuilder CreateCosmosDBIfNotExists<TContext>(this IdentityBuilder builder)
+            where TContext : IdentityCloudContext
+        {
+            Type contextType = typeof(TContext);
+
+            var context = ActivatorUtilities.GetServiceOrCreateInstance(builder.Services.BuildServiceProvider(),
+                contextType) as IdentityCloudContext;
+
+            context.CreateIfNotExistsAsync().Wait();
+
+            return builder;
+        }
     }
 }

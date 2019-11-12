@@ -201,7 +201,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             QueryDefinition query = new QueryDefinition("SELECT * FROM Roles r WHERE (r.normalizedName = @normalizedName)")
                .WithParameter("@normalizedName", normalizedName);
 
-            QueryRequestOptions options = Context.FeedOptions;
+            QueryRequestOptions options = Context.QueryOptions;
             options.MaxItemCount = 1;
             options.MaxBufferedItemCount = 1;
             options.MaxConcurrency = 0; //max parallel               

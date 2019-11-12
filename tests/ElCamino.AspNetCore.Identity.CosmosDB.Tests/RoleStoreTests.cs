@@ -125,7 +125,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
                 doc, new PartitionKey(doc.PartitionKey), context.RequestOptions);
             Console.WriteLine(docResult.Resource.ToString());
 
-            var fo = context.FeedOptions;
+            var fo = context.QueryOptions;
             fo.MaxItemCount = 1;
             var docQrTask = context.IdentityContainer.GetItemLinqQueryable<IdentityRole>(true)
                 .Where(d => d.Id == doc.Id)

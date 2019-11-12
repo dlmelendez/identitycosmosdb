@@ -76,7 +76,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 "JOIN r in u.roles " +
                 "WHERE (u.id = @userid) ").WithParameter("@userid", userId);
 
-            List<String> lroleIds =  await (await ExecuteSqlQuery<String>(query, Context.FeedOptions)
+            List<String> lroleIds =  await (await ExecuteSqlQuery<String>(query, Context.QueryOptions)
                                             .ConfigureAwait(false))
                                             .ToListAsync(cancellationToken: cancellationToken);
 
@@ -86,7 +86,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                     "FROM r " +
                     "WHERE (r.id in ( {0} )) ", string.Join(",", lroleIds.Select(rn => "'" + rn + "'"))));
 
-                return await (await ExecuteSqlQuery<String>(query2, Context.FeedOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
+                return await (await ExecuteSqlQuery<String>(query2, Context.QueryOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
             }
 
             return new List<String>();
@@ -109,7 +109,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@claimType", claim.Type);
 
             Debug.WriteLine(query.QueryText);
-            return await (await ExecuteSqlQuery<TUser>(query, Context.FeedOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
+            return await (await ExecuteSqlQuery<TUser>(query, Context.QueryOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
         }
 
 
@@ -140,7 +140,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                     .WithParameter("@roleId", roleId);
 
                 Debug.WriteLine(query.QueryText);
-                return await (await ExecuteSqlQuery<TUser>(query, Context.FeedOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
+                return await (await ExecuteSqlQuery<TUser>(query, Context.QueryOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
             }
             return new List<TUser>();
         }
@@ -187,7 +187,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                             .WithParameter("@normalizedName", normalizedRoleName);
 
             Console.WriteLine(roleQuery.QueryText);
-            var roles = await (await ExecuteSqlQuery<TRole>(roleQuery, Context.FeedOptions)
+            var roles = await (await ExecuteSqlQuery<TRole>(roleQuery, Context.QueryOptions)
                         .ConfigureAwait(false))
                         .ToListAsync(cancellationToken: cancellationToken);
             return roles.FirstOrDefault();
@@ -215,7 +215,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@userId", userId);
 
                 Debug.WriteLine(query.QueryText);
-                return await (await ExecuteSqlQuery<Model.IdentityUserRole<string>>(query, Context.FeedOptions).ConfigureAwait(false)).SingleOrDefaultAsync();
+                return await (await ExecuteSqlQuery<Model.IdentityUserRole<string>>(query, Context.QueryOptions).ConfigureAwait(false)).SingleOrDefaultAsync();
         }
 
         protected override Task<TUser> FindUserAsync(string userId, CancellationToken cancellationToken)
@@ -377,7 +377,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             if (queryOptions == null)
             {
-                queryOptions = Context.FeedOptions;
+                queryOptions = Context.QueryOptions;
             }
 
             var feedIterator = Context.IdentityContainer.GetItemQueryIterator<Q>(sqlQuery, requestOptions: queryOptions);
@@ -566,7 +566,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@normalizedName", normalizedUserName);
 
             Console.WriteLine(query.QueryText);
-            return await (await ExecuteSqlQuery<TUser>(query, Context.FeedOptions)
+            return await (await ExecuteSqlQuery<TUser>(query, Context.QueryOptions)
                                 .ConfigureAwait(false))
                                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
         }
@@ -649,7 +649,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@normalizedName", normalizedRoleName);
 
             Console.WriteLine(roleQuery.QueryText);
-            var roleIds = await (await ExecuteSqlQuery<String>(roleQuery, Context.FeedOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
+            var roleIds = await (await ExecuteSqlQuery<String>(roleQuery, Context.QueryOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
             return roleIds.FirstOrDefault();
         }
 
@@ -857,7 +857,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@providerKey", providerKey);
 
             Console.WriteLine(query.QueryText);
-            return await (await ExecuteSqlQuery<TUser>(query, Context.FeedOptions)
+            return await (await ExecuteSqlQuery<TUser>(query, Context.QueryOptions)
                                 .ConfigureAwait(false))
                                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
         }
@@ -881,7 +881,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@normalizedEmail", normalizedEmail);
 
             Console.WriteLine(query.QueryText);
-            return await (await ExecuteSqlQuery<TUser>(query, Context.FeedOptions)
+            return await (await ExecuteSqlQuery<TUser>(query, Context.QueryOptions)
                                 .ConfigureAwait(false))
                                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
         }
@@ -896,7 +896,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@normalizedEmail", normalizedEmail);
 
             Console.WriteLine(query.QueryText);
-            return await (await ExecuteSqlQuery<TUser>(query, Context.FeedOptions)
+            return await (await ExecuteSqlQuery<TUser>(query, Context.QueryOptions)
                                 .ConfigureAwait(false))
                                 .ToListAsync(cancellationToken: cancellationToken);
         }
