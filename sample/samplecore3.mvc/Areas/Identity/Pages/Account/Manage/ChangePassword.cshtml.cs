@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
-using IdentityUser = ElCamino.AspNetCore.Identity.DocumentDB.Model.IdentityUser;
+using IdentityUser = ElCamino.AspNetCore.Identity.CosmosDB.Model.IdentityUser;
 
 namespace samplecore3.mvc.Areas.Identity.Pages.Account.Manage
 {

@@ -12,9 +12,9 @@ using samplecore3.mvc.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using IdentityUser = ElCamino.AspNetCore.Identity.DocumentDB.Model.IdentityUser;
-using ElCamino.AspNetCore.Identity.DocumentDB.Model;
-using Microsoft.Azure.Documents.Client;
+using IdentityUser = ElCamino.AspNetCore.Identity.CosmosDB.Model.IdentityUser;
+using ElCamino.AspNetCore.Identity.CosmosDB.Model;
+using Microsoft.Azure.Cosmos;
 
 namespace samplecore3.mvc
 {
@@ -34,21 +34,26 @@ namespace samplecore3.mvc
             //    options.UseSqlServer(
             //        Configuration.GetConnectionString("DefaultConnection")));
             services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-                .AddDocumentDBStores<ApplicationDbContext>(() =>
+                .AddCosmosDBStores<ApplicationDbContext>(() =>
                 {
                     return new IdentityConfiguration()
                     {
-                        Uri = Configuration["IdentityDocumentDB:identityConfiguration:uri"],
-                        AuthKey = Configuration["IdentityDocumentDB:identityConfiguration:authKey"],
-                        Database = Configuration["IdentityDocumentDB:identityConfiguration:database"],
-                        IdentityCollection = Configuration["IdentityDocumentDB:identityConfiguration:identityCollection"],
-                        Policy = new ConnectionPolicy()
+                        Uri = Configuration["IdentityCosmosDB:identityConfiguration:uri"],
+                        AuthKey = Configuration["IdentityCosmosDB:identityConfiguration:authKey"],
+                        Database = Configuration["IdentityCosmosDB:identityConfiguration:database"],
+                        IdentityCollection = Configuration["IdentityCosmosDB:identityConfiguration:identityCollection"],
+                        Options = new CosmosClientOptions()
                         {
                             ConnectionMode = ConnectionMode.Gateway,
-                            ConnectionProtocol = Protocol.Https
+                            ConsistencyLevel = ConsistencyLevel.Session,
+                            SerializerOptions = new CosmosSerializationOptions()
+                            {
+                                PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
+                            }
                         }
                     };
-                });
+                })
+                .CreateCosmosDBIfNotExists<ApplicationDbContext>();
                 //.AddEntityFrameworkStores<ApplicationDbContext>();
             services.AddRazorPages();
         }

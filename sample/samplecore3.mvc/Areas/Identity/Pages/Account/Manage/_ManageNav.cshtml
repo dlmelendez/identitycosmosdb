@@ -1,4 +1,4 @@
-﻿@using IdentityUser = ElCamino.AspNetCore.Identity.DocumentDB.Model.IdentityUser
+﻿@using IdentityUser = ElCamino.AspNetCore.Identity.CosmosDB.Model.IdentityUser
 @inject SignInManager<IdentityUser> SignInManager
 @{
     var hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
