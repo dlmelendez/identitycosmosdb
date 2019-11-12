@@ -408,19 +408,25 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 queryOptions = Context.QueryOptions;
             }
 
-            var feedIterator = Context.IdentityContainer.GetItemQueryIterator<Q>(sqlQuery, requestOptions: queryOptions);
-
-            while (feedIterator.HasMoreResults)
+            string continuationToken = null;
+            do
             {
-                foreach (Q q in (await feedIterator.ReadNextAsync()))
+                FeedIterator<Q> feedIterator = Context.IdentityContainer.GetItemQueryIterator<Q>(sqlQuery, continuationToken: continuationToken, requestOptions: queryOptions);
+
+                while (feedIterator.HasMoreResults)
                 {
+                    FeedResponse<Q> feedResponse = await feedIterator.ReadNextAsync();
+                    continuationToken = feedResponse.ContinuationToken;
+                    foreach (Q q in feedResponse)
+                    {
 #if NETSTANDARD2_1
                     yield return q;
 #else
-                    results.Add(q);
+                        results.Add(q);
 #endif
+                    }
                 }
-            }
+            } while (continuationToken != null);
 #if !NETSTANDARD2_1
             return results;
 #endif
