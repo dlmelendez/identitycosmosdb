@@ -4,11 +4,11 @@ This project is an open source high performance plugin to ASP.NET Core Identity 
 
 [![NuGet Badge](https://buildstats.info/nuget/ElCamino.AspNetCore.Identity.DocumentDB)](https://www.nuget.org/packages/ElCamino.AspNetCore.Identity.DocumentDB/)
 
-Identity Core 3.x - Use ElCamino.AspNetCore.Identity.AzureTable, sample Mvc app: https://github.com/dlmelendez/identitycoredocumentdb/tree/master/sample/samplecore3.mvc
+Identity Core 3.x - Use ElCamino.AspNetCore.Identity.DocumentDB, sample Mvc app: https://github.com/dlmelendez/identitycoredocumentdb/tree/master/sample/samplecore3.mvc
 
-Identity Core 2.x - Use ElCamino.AspNetCore.Identity.AzureTable, sample Mvc app: https://github.com/dlmelendez/identitycoredocumentdb/tree/master/sample/samplecore2.mvc
+Identity Core 2.x - Use ElCamino.AspNetCore.Identity.DocumentDB, sample Mvc app: https://github.com/dlmelendez/identitycoredocumentdb/tree/master/sample/samplecore2.mvc
 
-Identity Core 1.x - Use ElCamino.AspNetCore.Identity.AzureTable, sample Mvc app: https://github.com/dlmelendez/identitycoredocumentdb/tree/master/sample/samplecore.mvc
+Identity Core 1.x - Use ElCamino.AspNetCore.Identity.DocumentDB, sample Mvc app: https://github.com/dlmelendez/identitycoredocumentdb/tree/master/sample/samplecore.mvc
 
 ## Quick Start for Identity Core 2
 
