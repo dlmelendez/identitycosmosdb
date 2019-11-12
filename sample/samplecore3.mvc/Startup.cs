@@ -53,7 +53,7 @@ namespace samplecore3.mvc
                         }
                     };
                 })
-                .CreateCosmosDBIfNotExists<ApplicationDbContext>();
+                .CreateCosmosDBIfNotExists<ApplicationDbContext>(); //can remove after first run;
                 //.AddEntityFrameworkStores<ApplicationDbContext>();
             services.AddRazorPages();
         }
