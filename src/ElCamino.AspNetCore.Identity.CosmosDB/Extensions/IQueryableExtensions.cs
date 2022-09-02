@@ -13,29 +13,25 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Extensions
                     this IAsyncEnumerable<T> asyncEnumerable,
                     CancellationToken cancellationToken = default)
         {
-            await using (var enumerator = asyncEnumerable.GetAsyncEnumerator(cancellationToken))
+            await using var enumerator = asyncEnumerable.GetAsyncEnumerator(cancellationToken);
+            if (await enumerator.MoveNextAsync().ConfigureAwait(false))
             {
-                if (await enumerator.MoveNextAsync().ConfigureAwait(false))
-                {
-                    return enumerator.Current;
-                }
-                return default;
+                return enumerator.Current;
             }
+            return default;
         }
 
         public static async Task<List<T>> ToListAsync<T>(
             this IAsyncEnumerable<T> asyncEnumerable,
             CancellationToken cancellationToken = default)
         {
-            await using (var enumerator = asyncEnumerable.GetAsyncEnumerator(cancellationToken))
+            await using var enumerator = asyncEnumerable.GetAsyncEnumerator(cancellationToken);
+            List<T> list = new List<T>();
+            while (await enumerator.MoveNextAsync().ConfigureAwait(false))
             {
-                List<T> list = new List<T>();
-                while (await enumerator.MoveNextAsync().ConfigureAwait(false))
-                {
-                    list.Add(enumerator.Current);
-                }
-                return list;
+                list.Add(enumerator.Current);
             }
+            return list;
         }
 
         public static Task<TSource> FirstOrDefaultAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> where = null, CancellationToken cancellationToken = default)
