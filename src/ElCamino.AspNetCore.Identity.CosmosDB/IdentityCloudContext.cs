@@ -1,18 +1,14 @@
 ﻿// MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ElCamino.AspNetCore.Identity.CosmosDB.Model;
 using System.Diagnostics;
 using System.Reflection;
 using System.IO;
-using System.Collections.ObjectModel;
 using System.Collections.Concurrent;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Scripts;
-using Microsoft.Azure.Cosmos.Linq;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB
 {

@@ -4,7 +4,6 @@ using ElCamino.AspNetCore.Identity.CosmosDB.Helpers;
 using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using System.Security;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB.Model
 {

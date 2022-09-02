@@ -3,7 +3,6 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;
-using System.Security.Claims;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB.Model
 {

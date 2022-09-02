@@ -1,17 +1,11 @@
 ﻿// MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using ElCamino.AspNetCore.Identity.CosmosDB;
 using Microsoft.AspNetCore.Identity;
-using ElCamino.AspNetCore.Identity.CosmosDB.Model;
-using Newtonsoft.Json;
-using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using ElCamino.AspNetCore.Identity.CosmosDB.Tests.ModelTests;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
 using System.Collections.Generic;
 using IdentityRole = ElCamino.AspNetCore.Identity.CosmosDB.Model.IdentityRole;
 using IdentityUser = ElCamino.AspNetCore.Identity.CosmosDB.Model.IdentityUser;

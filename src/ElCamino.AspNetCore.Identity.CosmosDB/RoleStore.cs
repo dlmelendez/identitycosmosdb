@@ -2,15 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using System.Net;
-using System.Diagnostics;
-using ElCamino.AspNetCore.Identity.CosmosDB.Model;
 using Microsoft.Azure.Cosmos;
-using Microsoft.Azure.Cosmos.Linq;
-using Newtonsoft.Json;
 using System.Threading;
 using ElCamino.AspNetCore.Identity.CosmosDB.Extensions;
 using System.Security.Claims;

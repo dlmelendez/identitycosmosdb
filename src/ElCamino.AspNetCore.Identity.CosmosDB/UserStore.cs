@@ -2,22 +2,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using System.Net;
 using System.Diagnostics;
-using ElCamino.AspNetCore.Identity.CosmosDB.Model;
 using Microsoft.Azure.Cosmos;
-using Microsoft.Azure.Cosmos.Linq;
 using Newtonsoft.Json;
 using System.Threading;
 using ElCamino.AspNetCore.Identity.CosmosDB.Extensions;
-using System.ComponentModel;
 using System.Security.Claims;
 using System.Globalization;
 using ElCamino.AspNetCore.Identity.CosmosDB.Helpers;
-using System.Collections.Concurrent;
 using Microsoft.Azure.Cosmos.Scripts;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB
@@ -83,7 +78,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                     "FROM r " +
                     "WHERE (r.id in ( {0} )) ", string.Join(",", lroleIds.Select(rn => "'" + rn + "'"))));
                 return await ExecuteSqlQuery<String>(query2, Context.QueryOptions)
-                    .ToListAsync(cancellationToken: cancellationToken);
+                    .ToListAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             }
 
             return new List<String>();
@@ -107,7 +102,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             Debug.WriteLine(query.QueryText);
             return await ExecuteSqlQuery<TUser>(query, Context.QueryOptions)
-                .ToListAsync(cancellationToken: cancellationToken);
+                .ToListAsync(cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
         }
 
 
@@ -310,7 +306,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         protected override async Task RemoveUserTokenAsync(Model.IdentityUserToken<string> token)
         {
-            var doc = await Context.IdentityContainer.DeleteItemAsync<Model.IdentityUserToken<string>>(token.Id, new PartitionKey(token.PartitionKey), Context.RequestOptions);
+            var doc = await Context.IdentityContainer.DeleteItemAsync<Model.IdentityUserToken<string>>(token.Id, new PartitionKey(token.PartitionKey), Context.RequestOptions)
+                .ConfigureAwait(false);
             Context.SetSessionTokenIfEmpty(doc.Headers.Session);
         }
     }
@@ -406,7 +403,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             if (feedIterator.HasMoreResults)
             {
-                return (await feedIterator.ReadNextAsync()).FirstOrDefault();
+                return (await feedIterator.ReadNextAsync().ConfigureAwait(false)).FirstOrDefault();
             }
 
             return null;
@@ -458,9 +455,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 throw new ArgumentNullException(nameof(user));
             }
 
-            var doc = await Context.IdentityContainer.CreateItemAsync<TUser>(user, new PartitionKey(user.PartitionKey), Context.RequestOptions);
+            var doc = await Context.IdentityContainer.CreateItemAsync<TUser>(user, new PartitionKey(user.PartitionKey), Context.RequestOptions)
+                .ConfigureAwait(false);
             Context.SetSessionTokenIfEmpty(doc.Headers.Session);
-            _ = doc.Resource;
+            user = doc.Resource;
             return IdentityResult.Success;
         }
 
@@ -486,7 +484,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 //TODO: Investigate why UserManager is updating twice with different ETag
                 //ro.IfMatchEtag = user.ETag;
 
-                var doc = await Context.IdentityContainer.ReplaceItemAsync<TUser>(user, user.Id.ToString(), new PartitionKey(user.PartitionKey), ro);
+                var doc = await Context.IdentityContainer.ReplaceItemAsync<TUser>(user, user.Id.ToString(), new PartitionKey(user.PartitionKey), ro)
+                    .ConfigureAwait(false);
                 Context.SetSessionTokenIfEmpty(doc.Headers.Session);
                 user = doc.Resource;
                 return IdentityResult.Success;
@@ -530,7 +529,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             try
             {
-                var doc = await Context.IdentityContainer.DeleteItemAsync<TUser>(user.Id.ToString(), new PartitionKey(user.PartitionKey), Context.RequestOptions);
+                var doc = await Context.IdentityContainer.DeleteItemAsync<TUser>(user.Id.ToString(), new PartitionKey(user.PartitionKey), Context.RequestOptions)
+                    .ConfigureAwait(false);
                 Context.SetSessionTokenIfEmpty(doc.Headers.Session);
             }
             catch (CosmosException dc)
@@ -612,7 +612,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             {
                 throw new ArgumentException(Resources.ValueCannotBeNullOrEmpty, nameof(normalizedRoleName));
             }
-            var roleEntity = await Roles.SingleOrDefaultAsync(r => r.NormalizedName == normalizedRoleName, cancellationToken);
+            var roleEntity = await Roles.SingleOrDefaultAsync(r => r.NormalizedName == normalizedRoleName, cancellationToken)
+                .ConfigureAwait(false);
             if (roleEntity != null)
             {
                 var userRole = user.Roles.FirstOrDefault(r => r.RoleId.Equals(roleEntity.Id) && r.UserId.Equals(user.Id));
@@ -646,7 +647,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 throw new ArgumentException(Resources.ValueCannotBeNullOrEmpty, nameof(normalizedRoleName));
             }
 
-            string roleId = await GetRoleIdByNormalizedNameAsync(normalizedRoleName, cancellationToken: cancellationToken);
+            string roleId = await GetRoleIdByNormalizedNameAsync(normalizedRoleName, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
             if (!string.IsNullOrWhiteSpace(roleId))
             {
                 var userRole = user.Roles.FirstOrDefault(ur => ur.RoleId.Equals(roleId) && ur.UserId.Equals(user.Id));
@@ -667,15 +669,6 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .ToListAsync(cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
             return roleIds.FirstOrDefault();
-        }
-
-        /// <summary>
-        /// Dispose the store
-        /// </summary>
-        public new void Dispose()
-        {
-            base.Dispose();
-            //_disposed = true;
         }
 
         /// <summary>

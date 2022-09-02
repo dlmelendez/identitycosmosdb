@@ -1,15 +1,11 @@
 ﻿// MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 
 using System;
-using ElCamino.AspNetCore.Identity.CosmosDB;
 using ElCamino.AspNetCore.Identity.CosmosDB.Model;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-using ElCamino.AspNetCore.Identity.CosmosDB.Tests.ModelTests;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.Json;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Azure.Cosmos;
 
