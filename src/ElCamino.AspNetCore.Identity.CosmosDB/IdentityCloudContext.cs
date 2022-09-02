@@ -22,9 +22,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             private CosmosClient _client = null;
             private Database _db = null;
-            private string _databaseId = null;
+            private readonly string _databaseId = null;
             private Container _identityContainer;
-            private string _identityContainerId;
+            private readonly string _identityContainerId;
             private string _sessionToken = string.Empty;
             private bool _disposed = false;
 
@@ -92,7 +92,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 string strId = "getUserById_v1";
                 
                 TryDeleteStoredProcedure(_identityContainer, strId).Wait();
-                StoredProcedureResponse response = await _identityContainer.Scripts.CreateStoredProcedureAsync(
+                _ = await _identityContainer.Scripts.CreateStoredProcedureAsync(
                     new StoredProcedureProperties(strId, body));
                 
             }
@@ -115,7 +115,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             ~InternalContext()
             {
-                this.Dispose(false);
+                Dispose(false);
             }
 
             public CosmosClient Client
@@ -136,7 +136,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 {
                     return new ItemRequestOptions()
                     {
-                        ConsistencyLevel = this.ConsistencyLevel,
+                        ConsistencyLevel = ConsistencyLevel,
                         SessionToken = SessionToken,
                     };
                 }
@@ -149,7 +149,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                     return new QueryRequestOptions()
                     {
                         EnableScanInQuery = true,
-                        ConsistencyLevel = this.ConsistencyLevel,                           
+                        ConsistencyLevel = ConsistencyLevel,                           
                     };
                 }
             }
@@ -175,7 +175,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             protected void ThrowIfDisposed()
             {
-                if (this._disposed)
+                if (_disposed)
                 {
                     throw new ObjectDisposedException(base.GetType().Name);
                 }
@@ -183,7 +183,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             public void Dispose()
             {
-                this.Dispose(true);
+                Dispose(true);
             }
 
             protected virtual void Dispose(bool disposing)
@@ -198,11 +198,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 }
             }
         }
-        private bool _disposed = false;
+        private readonly bool _disposed = false;
 
         //Thread safe dictionary 
         private static readonly ConcurrentDictionary<string, InternalContext> ContextCache = new ConcurrentDictionary<string, InternalContext>();
-        private string _configHash = null;
+        private readonly string _configHash = null;
         private InternalContext _currentContext = null;
 
         public string GetUserByIdSproc
@@ -231,7 +231,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         ~IdentityCloudContext()
         {
-            this.Dispose(false);
+            Dispose(false);
         }
 
         public CosmosClient Client
@@ -285,7 +285,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         protected void ThrowIfDisposed()
         {
-            if (this._disposed)
+            if (_disposed)
             {
                 throw new ObjectDisposedException(base.GetType().Name);
             }
@@ -293,7 +293,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         public void Dispose()
         {
-            this.Dispose(true);
+            Dispose(true);
         }
 
         protected virtual void Dispose(bool disposing)

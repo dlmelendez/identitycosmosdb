@@ -53,7 +53,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             }
         }
 
-        public override async Task<IList<Claim>> GetClaimsAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task<IList<Claim>> GetClaimsAsync(TRole role, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
             if (role == null)
@@ -63,7 +63,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             role = await FindByIdAsync(role.Id);
             if (role != null)
-                return await role.Claims.Select(c => new Claim(c.ClaimType, c.ClaimValue)).ToListAsync(cancellationToken: cancellationToken);
+                return await role.Claims.Select(c => new Claim(c.ClaimType, c.ClaimValue))
+                    .ToListAsync(cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
             return new List<Claim>();
         }
 
@@ -74,7 +76,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="claim">The claim to add to the role.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
-        public override Task AddClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken = default(CancellationToken))
+        public override Task AddClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
             if (role == null)
@@ -87,7 +89,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             }
 
             role.Claims.Add(CreateRoleClaim(role, claim));
-            return TaskCacheExtensions.CompletedTask;
+            return Task.CompletedTask;
         }        
 
     }
@@ -110,7 +112,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         }
 
-        public override async Task<IdentityResult> CreateAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task<IdentityResult> CreateAsync(TRole role, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -124,7 +126,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             return IdentityResult.Success;
         }
 
-        public async override Task<IdentityResult> UpdateAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
+        public async override Task<IdentityResult> UpdateAsync(TRole role, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -139,7 +141,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             return IdentityResult.Success;
         }
 
-        public async override Task<IdentityResult> DeleteAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
+        public async override Task<IdentityResult> DeleteAsync(TRole role, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -156,7 +158,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         public new void Dispose()
         {
             base.Dispose();
-            this.Dispose(true);
+            Dispose(true);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -165,11 +167,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             {
                 if (Context != null)
                 {
-                    this.Context.Dispose();
+                    Context.Dispose();
                 }
-                this._roleTable = null;
-                this.Context = null;
-                this._disposed = true;
+                _roleTable = null;
+                Context = null;
+                _disposed = true;
             }
         }
 
@@ -180,7 +182,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="id">The role ID to look for.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>A <see cref="Task{TResult}"/> that result of the look up.</returns>
-        public override Task<TRole> FindByIdAsync(string id, CancellationToken cancellationToken = default(CancellationToken))
+        public override Task<TRole> FindByIdAsync(string id, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -193,7 +195,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="normalizedName">The normalized role name to look for.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>A <see cref="Task{TResult}"/> that result of the look up.</returns>
-        public override async Task<TRole> FindByNameAsync(string normalizedName, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task<TRole> FindByNameAsync(string normalizedName, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -245,7 +247,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="claim">The claim to remove from the role.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
-        public override Task RemoveClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken = default(CancellationToken))
+        public override Task RemoveClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
             if (role == null)
@@ -263,7 +265,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 role.Claims.Remove(c);
             }
 
-            return TaskCacheExtensions.CompletedTask;
+            return Task.CompletedTask;
         }
 
         /// <summary>

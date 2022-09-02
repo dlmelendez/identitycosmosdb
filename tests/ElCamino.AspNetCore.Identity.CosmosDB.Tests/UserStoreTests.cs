@@ -348,7 +348,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [DataRow(false, DisplayName = "NoRoleProvider")]
         public async Task UpdateApplicationUser(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            _ = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GetTestAppUser();
@@ -464,7 +464,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [DataRow(false, DisplayName = "NoRoleProvider")]
         public async Task FindUserByEmail(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            _ = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = await CreateUser<ApplicationUser>(includeRoles);
@@ -533,7 +533,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [DataRow(false, DisplayName = "NoRoleProvider")]
         public async Task FindUserById(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            _ = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = await CurrentUser(includeRoles);
@@ -554,7 +554,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [DataRow(false, DisplayName = "NoRoleProvider")]
         public async Task FindUserByName(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            _ = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = await CurrentUser(includeRoles);
@@ -611,7 +611,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [DataRow(false, DisplayName = "NoRoleProvider")]
         public async Task AddRemoveUserToken(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            _ = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GenTestUser();
@@ -778,8 +778,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         {
             var identityRole = await CreateRoleIfNotExists(includeRoles, roleName);
             Console.WriteLine($"RoleId: {identityRole.Id}");
-
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            _ = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var userRoleTask = await manager.AddToRoleAsync(user, roleName);
@@ -881,8 +880,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
         public async Task GenerateUsers(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
-            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
+            _ = CreateUserStore(includeRoles);
+            _ = CreateUserManager(includeRoles);
 
             int userCount = 10;
             DateTime start2 = DateTime.UtcNow;

@@ -60,7 +60,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="describer">The <see cref="IdentityErrorDescriber"/>.</param>
         public UserStore(TContext context, IdentityErrorDescriber describer = null) : base(context, describer) { }
 
-        public override async Task<IList<string>> GetRolesAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task<IList<string>> GetRolesAsync(TUser user, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -75,34 +75,22 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 "FROM u " +
                 "JOIN r in u.roles " +
                 "WHERE (u.id = @userid) ").WithParameter("@userid", userId);
-#if !NETSTANDARD2_1
-
-            List<String> lroleIds =  await (await ExecuteSqlQuery<String>(query, Context.QueryOptions)
-                                            .ConfigureAwait(false))
-                                            .ToListAsync(cancellationToken: cancellationToken);
-#else
             List<String> lroleIds =  await ExecuteSqlQuery<String>(query, Context.QueryOptions)
                                             .ToListAsync(cancellationToken: cancellationToken);
-
-#endif
             if (lroleIds.Count > 0)
             {
                 QueryDefinition query2 = new QueryDefinition(string.Format("SELECT VALUE r.name " +
                     "FROM r " +
                     "WHERE (r.id in ( {0} )) ", string.Join(",", lroleIds.Select(rn => "'" + rn + "'"))));
-#if !NETSTANDARD2_1
-                return await (await ExecuteSqlQuery<String>(query2, Context.QueryOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
-#else
                 return await ExecuteSqlQuery<String>(query2, Context.QueryOptions)
                     .ToListAsync(cancellationToken: cancellationToken);
-#endif
             }
 
             return new List<String>();
 
         }
 
-        public async override Task<IList<TUser>> GetUsersForClaimAsync(Claim claim, CancellationToken cancellationToken = default(CancellationToken))
+        public async override Task<IList<TUser>> GetUsersForClaimAsync(Claim claim, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -118,12 +106,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@claimType", claim.Type);
 
             Debug.WriteLine(query.QueryText);
-#if !NETSTANDARD2_1
-            return await (await ExecuteSqlQuery<TUser>(query, Context.QueryOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
-#else
             return await ExecuteSqlQuery<TUser>(query, Context.QueryOptions)
                 .ToListAsync(cancellationToken: cancellationToken);
-#endif
         }
 
 
@@ -135,7 +119,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <returns>
         /// The <see cref="Task"/> contains a list of users, if any, that are in the specified role. 
         /// </returns>
-        public override async Task<IList<TUser>> GetUsersInRoleAsync(string normalizedRoleName, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task<IList<TUser>> GetUsersInRoleAsync(string normalizedRoleName, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -154,20 +138,19 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                     .WithParameter("@roleId", roleId);
 
                 Debug.WriteLine(query.QueryText);
-#if !NETSTANDARD2_1
-                return await (await ExecuteSqlQuery<TUser>(query, Context.QueryOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
-#else
                 return await ExecuteSqlQuery<TUser>(query, Context.QueryOptions)
                                 .ToListAsync(cancellationToken: cancellationToken);
-#endif
             }
             return new List<TUser>();
         }
 
-        protected override Task<Model.IdentityUserToken<string>> FindTokenAsync(TUser user, string loginProvider, string name, CancellationToken cancellationToken)
-            => UserTokens.FirstOrDefaultAsync((t) => t.UserId == user.Id && t.LoginProvider == loginProvider && t.Name == name, cancellationToken);
+        protected override async Task<Model.IdentityUserToken<string>> FindTokenAsync(TUser user, string loginProvider, string name, CancellationToken cancellationToken)
+        {
+            return await UserTokens.FirstOrDefaultAsync((t) => t.UserId == user.Id && t.LoginProvider == loginProvider && t.Name == name, cancellationToken)
+                .ConfigureAwait(false);
+        }
 
-        public override async Task AddToRoleAsync(TUser user, string normalizedRoleName, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task AddToRoleAsync(TUser user, string normalizedRoleName, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -180,7 +163,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 throw new ArgumentException(Resources.ValueCannotBeNullOrEmpty, nameof(normalizedRoleName));
             }
 
-            var roleEntity = await Roles.SingleOrDefaultAsync(r => r.NormalizedName == normalizedRoleName, cancellationToken: cancellationToken);
+            var roleEntity = await Roles.SingleOrDefaultAsync(r => r.NormalizedName == normalizedRoleName, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
             if (roleEntity == null)
             {
                 throw new InvalidOperationException(String.Format(CultureInfo.CurrentCulture, Resources.RoleNotFound, normalizedRoleName));
@@ -206,15 +190,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                             .WithParameter("@normalizedName", normalizedRoleName);
 
             Console.WriteLine(roleQuery.QueryText);
-#if !NETSTANDARD2_1
-            var roles = await (await ExecuteSqlQuery<TRole>(roleQuery, Context.QueryOptions)
-                        .ConfigureAwait(false))
-                        .ToListAsync(cancellationToken: cancellationToken);
-#else
-            var roles = await ExecuteSqlQuery<TRole>(roleQuery, Context.QueryOptions)
-                        .ToListAsync(cancellationToken: cancellationToken);
-#endif
-            return roles.FirstOrDefault();
+            return await ExecuteSqlQuery<TRole>(roleQuery, Context.QueryOptions)
+                        .FirstOrDefaultAsync(cancellationToken: cancellationToken)
+                        .ConfigureAwait(false);
         }
 
         protected override async Task<Model.IdentityUserRole<string>> FindUserRoleAsync(string userId, string roleId, CancellationToken cancellationToken)
@@ -316,7 +294,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             var doc = await Context.IdentityContainer.CreateItemAsync<Model.IdentityUserToken<string>>(token, new PartitionKey(token.PartitionKey), Context.RequestOptions);
             Context.SetSessionTokenIfEmpty(doc.Headers.Session);
-            token = doc.Resource;
+            _ = doc.Resource;
         }
 
         protected override Model.IdentityUserToken<string> CreateUserToken(TUser user, string loginProvider, string name, string value)
@@ -391,18 +369,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// </summary>
         public TContext Context { get; private set; }
 
-#if NETSTANDARD2_1
         internal protected async IAsyncEnumerable<Q> ExecuteSqlQuery<Q>(QueryDefinition sqlQuery, QueryRequestOptions queryOptions = null) where Q : class
-#else
-        internal protected async Task<IEnumerable<Q>> ExecuteSqlQuery<Q>(QueryDefinition sqlQuery, QueryRequestOptions queryOptions = null) where Q : class
-
-#endif
         {
-
-#if !NETSTANDARD2_1
-            List<Q> results = new List<Q>();
-#endif
-
             if (queryOptions == null)
             {
                 queryOptions = Context.QueryOptions;
@@ -419,17 +387,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                     continuationToken = feedResponse.ContinuationToken;
                     foreach (Q q in feedResponse)
                     {
-#if NETSTANDARD2_1
-                    yield return q;
-#else
-                        results.Add(q);
-#endif
+                        yield return q;
                     }
                 }
             } while (continuationToken != null);
-#if !NETSTANDARD2_1
-            return results;
-#endif
         }
 
         internal protected async Task<Q> ExecuteSqlQueryFirst<Q>(QueryDefinition sqlQuery, QueryRequestOptions queryOptions = null) where Q : class
@@ -488,7 +449,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="user">The user to create.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>The <see cref="Task"/> that represents the asynchronous operation, containing the <see cref="IdentityResult"/> of the creation operation.</returns>
-        public async override Task<IdentityResult> CreateAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
+        public async override Task<IdentityResult> CreateAsync(TUser user, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -499,7 +460,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             var doc = await Context.IdentityContainer.CreateItemAsync<TUser>(user, new PartitionKey(user.PartitionKey), Context.RequestOptions);
             Context.SetSessionTokenIfEmpty(doc.Headers.Session);
-            user = doc.Resource;
+            _ = doc.Resource;
             return IdentityResult.Success;
         }
 
@@ -509,7 +470,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="user">The user to update.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>The <see cref="Task"/> that represents the asynchronous operation, containing the <see cref="IdentityResult"/> of the update operation.</returns>
-        public override async Task<IdentityResult> UpdateAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task<IdentityResult> UpdateAsync(TUser user, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -558,7 +519,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="user">The user to delete.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>The <see cref="Task"/> that represents the asynchronous operation, containing the <see cref="IdentityResult"/> of the update operation.</returns>
-        public override async Task<IdentityResult> DeleteAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task<IdentityResult> DeleteAsync(TUser user, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -587,7 +548,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <returns>
         /// The <see cref="Task"/> that represents the asynchronous operation, containing the user matching the specified <paramref name="userId"/> if it exists.
         /// </returns>
-        public override async Task<TUser> FindByIdAsync(string userId, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task<TUser> FindByIdAsync(string userId, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -609,7 +570,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <returns>
         /// The <see cref="Task"/> that represents the asynchronous operation, containing the user matching the specified <paramref name="normalizedUserName"/> if it exists.
         /// </returns>
-        public override async Task<TUser> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task<TUser> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -639,7 +600,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="normalizedRoleName">The role to remove.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
-        public override async Task RemoveFromRoleAsync(TUser user, string normalizedRoleName, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task RemoveFromRoleAsync(TUser user, string normalizedRoleName, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -672,7 +633,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>A <see cref="Task{TResult}"/> containing a flag indicating if the specified user is a member of the given group. If the 
         /// user is a member of the group the returned value with be true, otherwise it will be false.</returns>
-        public override async Task<bool> IsInRoleAsync(TUser user, string normalizedRoleName, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task<bool> IsInRoleAsync(TUser user, string normalizedRoleName, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -694,7 +655,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             return false;
         }
 
-        protected async Task<string> GetRoleIdByNormalizedNameAsync(string normalizedRoleName, CancellationToken cancellationToken = default(CancellationToken))
+        protected async Task<string> GetRoleIdByNormalizedNameAsync(string normalizedRoleName, CancellationToken cancellationToken = default)
         {
             QueryDefinition roleQuery = new QueryDefinition("SELECT VALUE r.id " +
                 "FROM ROOT r " +
@@ -702,12 +663,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@normalizedName", normalizedRoleName);
 
             Console.WriteLine(roleQuery.QueryText);
-#if !NETSTANDARD2_1
-            var roleIds = await (await ExecuteSqlQuery<String>(roleQuery, Context.QueryOptions).ConfigureAwait(false)).ToListAsync(cancellationToken: cancellationToken);
-#else
             var roleIds = await ExecuteSqlQuery<String>(roleQuery, Context.QueryOptions)
-                .ToListAsync(cancellationToken: cancellationToken);
-#endif
+                .ToListAsync(cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
             return roleIds.FirstOrDefault();
         }
 
@@ -726,7 +684,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="user">The user whose claims should be retrieved.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>A <see cref="Task{TResult}"/> that contains the claims granted to a user.</returns>
-        public override async Task<IList<Claim>> GetClaimsAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task<IList<Claim>> GetClaimsAsync(TUser user, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
             if (user == null)
@@ -734,7 +692,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 throw new ArgumentNullException(nameof(user));
             }
 
-            return await user.Claims.Where(uc => uc.UserId.Equals(user.Id)).Select(c => c.ToClaim()).ToListAsync(cancellationToken: cancellationToken);
+            return await user.Claims.Where(uc => uc.UserId.Equals(user.Id)).Select(c => c.ToClaim())
+                .ToListAsync(cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -744,7 +704,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="claims">The claim to add to the user.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
-        public override Task AddClaimsAsync(TUser user, IEnumerable<Claim> claims, CancellationToken cancellationToken = default(CancellationToken))
+        public override Task AddClaimsAsync(TUser user, IEnumerable<Claim> claims, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
             if (user == null)
@@ -759,7 +719,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             {
                 user.Claims.Add(CreateUserClaim(user, claim));
             }
-            return TaskCacheExtensions.CompletedTask;
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -770,7 +730,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="newClaim">The new claim replacing the <paramref name="claim"/>.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
-        public override async Task ReplaceClaimAsync(TUser user, Claim claim, Claim newClaim, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task ReplaceClaimAsync(TUser user, Claim claim, Claim newClaim, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
             if (user == null)
@@ -786,7 +746,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 throw new ArgumentNullException(nameof(newClaim));
             }
 
-            var matchedClaims = await UserClaims.Where(uc => uc.UserId.Equals(user.Id) && uc.ClaimValue == claim.Value && uc.ClaimType == claim.Type).ToListAsync(cancellationToken: cancellationToken);
+            var matchedClaims = await UserClaims.Where(uc => uc.UserId.Equals(user.Id) && uc.ClaimValue == claim.Value && uc.ClaimType == claim.Type)
+                .ToListAsync(cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
             foreach (var matchedClaim in matchedClaims)
             {
                 matchedClaim.ClaimValue = newClaim.Value;
@@ -801,7 +763,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="claims">The claim to remove.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
-        public override async Task RemoveClaimsAsync(TUser user, IEnumerable<Claim> claims, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task RemoveClaimsAsync(TUser user, IEnumerable<Claim> claims, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
             if (user == null)
@@ -814,7 +776,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             }
             foreach (var claim in claims)
             {
-                var matchedClaims = await user.Claims.Where(uc => uc.UserId.Equals(user.Id) && uc.ClaimValue == claim.Value && uc.ClaimType == claim.Type).AsQueryable().ToListAsync(cancellationToken: cancellationToken);
+                var matchedClaims = await user.Claims.Where(uc => uc.UserId.Equals(user.Id) && uc.ClaimValue == claim.Value && uc.ClaimType == claim.Type)
+                    .AsQueryable()
+                    .ToListAsync(cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
                 foreach (var c in matchedClaims)
                 {
                     user.Claims.Remove(c);
@@ -830,7 +795,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
         public override Task AddLoginAsync(TUser user, UserLoginInfo login,
-            CancellationToken cancellationToken = default(CancellationToken))
+            CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -855,7 +820,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
         public override Task RemoveLoginAsync(TUser user, string loginProvider, string providerKey,
-            CancellationToken cancellationToken = default(CancellationToken))
+            CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -868,7 +833,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             {
                 user.Logins.Remove(entry);
             }
-            return TaskCacheExtensions.CompletedTask;
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -879,7 +844,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <returns>
         /// The <see cref="Task"/> for the asynchronous operation, containing a list of <see cref="UserLoginInfo"/> for the specified <paramref name="user"/>, if any.
         /// </returns>
-        public override async Task<IList<UserLoginInfo>> GetLoginsAsync(TUser user, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task<IList<UserLoginInfo>> GetLoginsAsync(TUser user, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -889,7 +854,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             }
             var userId = user.Id;
             return await user.Logins.Where(l => l.UserId.Equals(userId))
-                .Select(l => new UserLoginInfo(l.LoginProvider, l.ProviderKey, l.ProviderDisplayName)).ToListAsync(cancellationToken:cancellationToken);
+                .Select(l => new UserLoginInfo(l.LoginProvider, l.ProviderKey, l.ProviderDisplayName))
+                .ToListAsync(cancellationToken:cancellationToken)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -903,7 +870,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// The <see cref="Task"/> for the asynchronous operation, containing the user, if any which matched the specified login provider and key.
         /// </returns>
         public override async Task<TUser> FindByLoginAsync(string loginProvider, string providerKey,
-            CancellationToken cancellationToken = default(CancellationToken))
+            CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -928,7 +895,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <returns>
         /// The task object containing the results of the asynchronous lookup operation, the user if any associated with the specified normalized email address.
         /// </returns>
-        public override async Task<TUser> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task<TUser> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -942,7 +909,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                                 .ConfigureAwait(false);
         }
 
-        public async virtual Task<IList<TUser>> FindAllByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default(CancellationToken))
+        public async virtual Task<IList<TUser>> FindAllByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -952,15 +919,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@normalizedEmail", normalizedEmail);
 
             Console.WriteLine(query.QueryText);
-#if !NETSTANDARD2_1
-            return await (await ExecuteSqlQuery<TUser>(query, Context.QueryOptions)
-                                .ConfigureAwait(false))
-                                .ToListAsync(cancellationToken: cancellationToken);
-#else
             return await ExecuteSqlQuery<TUser>(query, Context.QueryOptions)
-                                .ToListAsync(cancellationToken: cancellationToken);
-#endif
+                                .ToListAsync(cancellationToken: cancellationToken)
+                                .ConfigureAwait(false);
         }
-
     }
 }

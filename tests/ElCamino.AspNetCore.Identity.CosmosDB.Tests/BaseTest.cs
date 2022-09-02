@@ -65,7 +65,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             IdentityBuilder builder = new IdentityBuilder(typeof(TUser), typeof(TRole), new ServiceCollection());
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             // Add Identity services to the services container.
-            void options(IdentityOptions config)
+            static void options(IdentityOptions config)
             {
                 config.Lockout = new LockoutOptions() { MaxFailedAccessAttempts = 2 };
                 config.Password.RequireDigit = false;

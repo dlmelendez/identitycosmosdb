@@ -1,10 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+﻿<Project Sdk="Microsoft.NET.Sdk" >
   <PropertyGroup>
     <Description>Azure CosmosDB Provider to support AspNet Identity Core frameworks for .NET.</Description>
     <Copyright>Copyright © 2019 David Melendez, MIT License</Copyright>
     <AssemblyTitle>Azure CosmosDB Provider for ASP.NET Identity Core</AssemblyTitle>
     <Authors>David Melendez</Authors>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+	<LangVersion>10.0</LangVersion>
     <AssemblyName>ElCamino.AspNetCore.Identity.CosmosDB</AssemblyName>
     <AssemblyOriginatorKeyFile>../../tools/Key.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>

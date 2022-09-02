@@ -10,7 +10,6 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Extensions
 {
     internal static class IQueryableExtensions
     {
-#if NETSTANDARD2_1
         public static async Task<T> FirstOrDefaultAsync<T>(
                     this IAsyncEnumerable<T> asyncEnumerable,
                     CancellationToken cancellationToken = default)
@@ -39,10 +38,18 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Extensions
                 return list;
             }
         }
-#endif
-        public static Task<List<TSource>> ToListAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> where = null, CancellationToken cancellationToken = default(CancellationToken))
-        {
 
+        public static Task<TSource> FirstOrDefaultAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> where = null, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (where == null)
+                return Task.FromResult(source.FirstOrDefault());
+            return Task.FromResult(source.FirstOrDefault(where));
+        }
+
+        public static Task<List<TSource>> ToListAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> where = null, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
             if (where == null)
             {
                 List<TSource> list = source as List<TSource>;
@@ -50,28 +57,17 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Extensions
                 {
                     return Task.FromResult(list);
                 }
-                return Task.Run(() => { return source.ToList(); }, cancellationToken);
+                return Task.FromResult(source.ToList());
             }
-            else
-                return Task.Run(() => { return source.Where(where).ToList(); }, cancellationToken);
+            return Task.FromResult(source.Where(where).ToList());
         }
 
-        public static Task<TSource> FirstOrDefaultAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> where = null, CancellationToken cancellationToken = default(CancellationToken))
+        public static Task<TSource> SingleOrDefaultAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> where = null, CancellationToken cancellationToken = default)
         {
-            return Task.Run(() => {
-                if (where == null)
-                    return source.FirstOrDefault();
-                return source.FirstOrDefault(where);
-            }, cancellationToken);
-        }
-
-        public static Task<TSource> SingleOrDefaultAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> where = null, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            return Task.Run(() => {
-                if(where == null)
-                    return source.SingleOrDefault();
-                return source.Where(where).SingleOrDefault();
-            }, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (where == null)
+                return Task.FromResult(source.SingleOrDefault());
+            return Task.FromResult(source.Where(where).SingleOrDefault());
         }
     }
 }

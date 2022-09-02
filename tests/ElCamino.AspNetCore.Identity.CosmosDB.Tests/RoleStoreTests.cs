@@ -58,7 +58,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Console.WriteLine($"RoleId: {roleNew}");
             var role = new IdentityRole(roleNew);
             var start = DateTime.UtcNow;
-            var createTask = await manager.CreateAsync(role);
+            _ = await manager.CreateAsync(role);
 
             Console.WriteLine("CreateRoleAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
             Claim c1 = GenRoleClaim();
@@ -75,12 +75,12 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("RoleStore.Role")]
         public async Task AddRoleClaim()
         {
-            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore(true);
+            _ = CreateRoleStore(true);
             RoleManager<IdentityRole> manager = CreateRoleManager(true);
             string roleNew = string.Format("TestRole_{0}", Guid.NewGuid());
             var role = new IdentityRole(roleNew);
             var start = DateTime.UtcNow;
-            var createTask = await manager.CreateAsync(role);
+            _ = await manager.CreateAsync(role);
 
             Console.WriteLine("CreateRoleAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
 
@@ -153,7 +153,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         {
             string roleNew = string.Format("TestRole_{0}", Guid.NewGuid());
             var role = new IdentityRole(roleNew);
-            var createTask = await manager.CreateAsync(role);
+            _ = await manager.CreateAsync(role);
             return role;
         }
 
@@ -193,15 +193,17 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("RoleStore.Role")]
         public async Task UpdateRole2()
         {
-            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore(true);
+            _ = CreateRoleStore(true);
             RoleManager<IdentityRole> manager = CreateRoleManager(true);
             string roleNew = string.Format("{0}_TestRole", Guid.NewGuid());
 
             var role = new IdentityRole(roleNew);
-            var createTask = await manager.CreateAsync(role);
+            var result = await manager.CreateAsync(role);
+            Assert.AreEqual(IdentityResult.Success, result);
 
             role.Name = role.Name + Guid.NewGuid();
-            var updateTask = await manager.UpdateAsync(role);
+            result = await manager.UpdateAsync(role);
+            Assert.AreEqual(IdentityResult.Success, result);
 
             var findTask = await manager.FindByIdAsync(role.Id);
             Assert.IsNotNull(findTask, "Find Role Result is null");
@@ -233,7 +235,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("RoleStore.Role")]
         public async Task FindRoleById()
         {
-            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore(true);
+            _ = CreateRoleStore(true);
             RoleManager<IdentityRole> manager = CreateRoleManager(true);
             DateTime start = DateTime.UtcNow;
             var role = await CreateRoleHelper(manager);
