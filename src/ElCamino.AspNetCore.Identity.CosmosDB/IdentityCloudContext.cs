@@ -106,7 +106,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                     StoredProcedureResponse sproc = await cosmosScripts.ReadStoredProcedureAsync(sprocId);
                     await cosmosScripts.DeleteStoredProcedureAsync(sprocId);
                 }
-                catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+                catch (CosmosException ex) 
+                when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
                     //Nothing to delete
                 }
