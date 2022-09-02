@@ -7,10 +7,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Helpers
 {
     public static class HashHelper
     {
-        public static SHA256 sha = SHA256.Create();
-
         public static string ConvertToHash(string input)
         {
+            using SHA256 sha = SHA256.Create();
             return GetHash(sha, input);
         }
 
