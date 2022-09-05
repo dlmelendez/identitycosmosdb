@@ -10,6 +10,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests.ModelTests
     [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class ApplicationUser : IdentityUser
     {
+        public ApplicationUser() : base() { }
+
         public string FirstName { get; set; }
 
         public string LastName { get; set; }

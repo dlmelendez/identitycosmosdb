@@ -1,4 +1,4 @@
-// MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
+﻿// MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -6,6 +6,9 @@ using System;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB.Model
 {
+    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
+    public class IdentityUserLogin : IdentityUserLogin<string> { }
+
     [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class IdentityUserLogin<TKey> : Microsoft.AspNetCore.Identity.IdentityUserLogin<TKey>
         where TKey : IEquatable<TKey>

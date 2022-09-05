@@ -14,12 +14,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 {
     public partial class UserStoreTests : BaseTest<ApplicationUser, IdentityRole, IdentityCloudContext>
     {
-        #region Static and Const Members
         public static object objectLock = new object();
         public static string DefaultUserPassword = "M" + Guid.NewGuid().ToString();
 
-
-#endregion
 
         private ApplicationUser currentUser = null;
         private ApplicationUser currentRoleUser = null;
@@ -319,7 +316,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             }
 
             user = await manager.FindByIdAsync(user.Id);
-            WriteLineObject<IdentityUser>(user);
+            WriteLineObject<ApplicationUser>(user);
 
 
             DateTime start = DateTime.UtcNow;
@@ -381,7 +378,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GenTestUser();
-            WriteLineObject<IdentityUser>(user);
+            WriteLineObject<ApplicationUser>(user);
             var taskUser = await manager.CreateAsync(user, DefaultUserPassword);
             Assert.IsTrue(taskUser.Succeeded, string.Concat(taskUser.Errors));
             user = await manager.FindByIdAsync(user.Id);

@@ -25,7 +25,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
     /// <typeparam name="TContext">The type of the data context class used to access the store.</typeparam>
     public class UserStore<TUser, TContext>
         : UserStore<TUser, Model.IdentityRole<string>, TContext>
-        where TUser : Model.IdentityUser<string>, new()
+        where TUser : Model.IdentityUser<string, Model.IdentityUserClaim<string>, Model.IdentityUserRole<string>, Model.IdentityUserLogin<string>>, new()
         where TContext : IdentityCloudContext
     {
         /// <summary>
@@ -42,9 +42,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
     /// <typeparam name="TUser">The type representing a user.</typeparam>
     /// <typeparam name="TRole">The type representing a role.</typeparam>
     /// <typeparam name="TContext">The type of the data context class used to access the store.</typeparam>   
-    public class UserStore<TUser, TRole, TContext> 
+    public class UserStore<TUser, TRole, TContext>
         : UserStore<TUser, TRole, TContext, string, Model.IdentityUserClaim<string>, Model.IdentityUserRole<string>, Model.IdentityUserLogin<string>, Model.IdentityUserToken<string>, Model.IdentityRoleClaim<string>>
-        where TUser : Model.IdentityUser<string>, new()
+        where TUser : Model.IdentityUser<string, Model.IdentityUserClaim<string>, Model.IdentityUserRole<string>, Model.IdentityUserLogin<string>>, new()
         where TRole : Model.IdentityRole<string>, new()
         where TContext : IdentityCloudContext
     {
@@ -171,7 +171,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         protected override Model.IdentityUserRole<string> CreateUserRole(TUser user, TRole role)
         {
-            return new Model.IdentityUserRole<string>()
+            return new Model.IdentityUserRole()
             {
                 UserId = user.Id,
                 RoleId = role.Id
@@ -213,7 +213,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@userId", userId);
 
                 Debug.WriteLine(query.QueryText);
-                return await ExecuteSqlQueryFirst<Model.IdentityUserRole<string>>(query, Context.QueryOptions).ConfigureAwait(false);
+                return await ExecuteSqlQueryFirst<Model.IdentityUserRole>(query, Context.QueryOptions).ConfigureAwait(false);
         }
 
         protected override Task<TUser> FindUserAsync(string userId, CancellationToken cancellationToken)
@@ -368,10 +368,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         internal protected async IAsyncEnumerable<Q> ExecuteSqlQuery<Q>(QueryDefinition sqlQuery, QueryRequestOptions queryOptions = null) where Q : class
         {
-            if (queryOptions == null)
-            {
-                queryOptions = Context.QueryOptions;
-            }
+            queryOptions ??= Context.QueryOptions;
 
             string continuationToken = null;
             do
@@ -458,7 +455,6 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             var doc = await Context.IdentityContainer.CreateItemAsync<TUser>(user, new PartitionKey(user.PartitionKey), Context.RequestOptions)
                 .ConfigureAwait(false);
             Context.SetSessionTokenIfEmpty(doc.Headers.Session);
-            user = doc.Resource;
             return IdentityResult.Success;
         }
 

@@ -12,8 +12,8 @@ using Microsoft.Azure.Cosmos;
 namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 {
     public partial class BaseTest<TUser, TRole, TContext> : IDisposable
-        where TUser : Model.IdentityUser, new()
-        where TRole : Model.IdentityRole, new()
+        where TUser : Model.IdentityUser<string, Model.IdentityUserClaim<string>, Model.IdentityUserRole<string>, Model.IdentityUserLogin<string>>, new()
+        where TRole : Model.IdentityRole<string>, new()
         where TContext : IdentityCloudContext
     {
 
