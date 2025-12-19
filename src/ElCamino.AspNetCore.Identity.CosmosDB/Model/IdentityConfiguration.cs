@@ -2,12 +2,10 @@
 
 using ElCamino.AspNetCore.Identity.CosmosDB.Helpers;
 using Microsoft.Azure.Cosmos;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
+using System.Text.Json.Serialization;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB.Model
 {
-    [JsonObject("identityConfiguration", NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class IdentityConfiguration
     {
         public string Uri { get; set; }
@@ -17,7 +15,6 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Model
         public string Database { get; set; }
 
         public string IdentityCollection { get; set; } = Constants.ContainerIds.DefaultIdentityCollection;
-
 
         [JsonIgnore]
         public CosmosClientOptions Options { get; set; } = new CosmosClientOptions()

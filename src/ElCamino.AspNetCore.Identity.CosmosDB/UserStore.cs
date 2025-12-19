@@ -1,18 +1,18 @@
 ﻿// MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Identity;
-using System.Net;
 using System.Diagnostics;
-using Microsoft.Azure.Cosmos;
-using Newtonsoft.Json;
-using System.Threading;
-using ElCamino.AspNetCore.Identity.CosmosDB.Extensions;
-using System.Security.Claims;
 using System.Globalization;
+using System.Linq;
+using System.Net;
+using System.Security.Claims;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using ElCamino.AspNetCore.Identity.CosmosDB.Extensions;
 using ElCamino.AspNetCore.Identity.CosmosDB.Helpers;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Scripts;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB
@@ -213,7 +213,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@userId", userId);
 
                 Debug.WriteLine(query.QueryText);
-                return await ExecuteSqlQueryFirst<Model.IdentityUserRole>(query, Context.QueryOptions).ConfigureAwait(false);
+                return await ExecuteSqlQueryFirstAsync<Model.IdentityUserRole>(query, Context.QueryOptions).ConfigureAwait(false);
         }
 
         protected override Task<TUser> FindUserAsync(string userId, CancellationToken cancellationToken)
@@ -387,7 +387,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             } while (continuationToken != null);
         }
 
-        internal protected async Task<Q> ExecuteSqlQueryFirst<Q>(QueryDefinition sqlQuery, QueryRequestOptions queryOptions = null) where Q : class
+        protected internal async Task<Q> ExecuteSqlQueryFirstAsync<Q>(QueryDefinition sqlQuery, QueryRequestOptions queryOptions = null) where Q : class
         {
             if (queryOptions == null)
             {
@@ -405,6 +405,18 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             return null;
         }
+
+        protected internal async Task<Q> ExecuteSqlStoredProcFirstAsync<Q>(Scripts scripts, string sprocName, PartitionKey partitionKey, dynamic[] parameters) where Q : class
+        {
+            StoredProcedureExecuteResponse<string> response = await scripts.ExecuteStoredProcedureAsync<string>(
+               sprocName,
+               partitionKey,
+               parameters);
+
+            return !string.IsNullOrWhiteSpace(response.Resource) ?
+                JsonSerializer.Deserialize<Q>(response.Resource, JsonHelper.JsonOptions) : null;
+        }
+
 
         protected IOrderedQueryable<TUser> UsersSet
         {
@@ -548,14 +560,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            StoredProcedureExecuteResponse<string> response = await Context.IdentityContainer.Scripts.ExecuteStoredProcedureAsync<string>(
+
+            return await ExecuteSqlStoredProcFirstAsync<TUser>(Context.IdentityContainer.Scripts,
                 Context.GetUserByIdSproc,
                 new PartitionKey(PartitionKeyHelper.GetPartitionKeyFromId(userId)),
-                new dynamic[] { userId });
-
-            return !string.IsNullOrWhiteSpace(response.Resource) ?
-                JsonConvert.DeserializeObject<TUser>(response.Resource) : null;
-            
+                [userId]);
         }
 
         /// <summary>
@@ -577,7 +586,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@normalizedName", normalizedUserName);
 
             Console.WriteLine(query.QueryText);
-            return await ExecuteSqlQueryFirst<TUser>(query, Context.QueryOptions)
+            return await ExecuteSqlQueryFirstAsync<TUser>(query, Context.QueryOptions)
                                 .ConfigureAwait(false);
         }
 
@@ -871,7 +880,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@providerKey", providerKey);
 
             Console.WriteLine(query.QueryText);
-            return await ExecuteSqlQueryFirst<TUser>(query, Context.QueryOptions)
+            return await ExecuteSqlQueryFirstAsync<TUser>(query, Context.QueryOptions)
                                 .ConfigureAwait(false);
         }
      
@@ -894,7 +903,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 .WithParameter("@normalizedEmail", normalizedEmail);
 
             Console.WriteLine(query.QueryText);
-            return await ExecuteSqlQueryFirst<TUser>(query, Context.QueryOptions)
+            return await ExecuteSqlQueryFirstAsync<TUser>(query, Context.QueryOptions)
                                 .ConfigureAwait(false);
         }
 

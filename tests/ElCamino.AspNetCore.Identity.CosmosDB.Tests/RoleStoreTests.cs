@@ -1,19 +1,25 @@
 ﻿// MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.AspNetCore.Identity;
 using System.Linq;
-using ElCamino.AspNetCore.Identity.CosmosDB.Tests.ModelTests;
 using System.Security.Claims;
-using IdentityRole = ElCamino.AspNetCore.Identity.CosmosDB.Model.IdentityRole;
-using Microsoft.Azure.Cosmos;
+using System.Text.Json;
 using System.Threading.Tasks;
+using ElCamino.AspNetCore.Identity.CosmosDB.Tests.ModelTests;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Azure.Cosmos;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using IdentityRole = ElCamino.AspNetCore.Identity.CosmosDB.Model.IdentityRole;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 {
     [TestClass]
     public class RoleStoreTests : BaseTest<ApplicationUser, IdentityRole, IdentityCloudContext>
     {
+        private readonly JsonSerializerOptions JsonOptions = new()
+        {
+            WriteIndented = true
+        };
+
         private TestContext testContextInstance;
         /// <summary>
         ///Gets or sets the test context which provides
@@ -256,10 +262,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Assert.AreEqual<string>(role.Name, findTask.Name, "Role names don't match.");
         }
 
-        private void WriteLineObject<t>(t obj) where t : class
+        private void WriteLineObject<T>(T obj) where T : class
         {
-            Console.WriteLine(typeof(t).Name);
-            string strLine = obj == null ? "Null" : Newtonsoft.Json.JsonConvert.SerializeObject(obj, Newtonsoft.Json.Formatting.Indented);
+            Console.WriteLine(typeof(T).Name);
+            string strLine = obj is null ? "Null" : JsonSerializer.Serialize(obj, JsonOptions);
             Console.WriteLine("{0}", strLine);
         }
 

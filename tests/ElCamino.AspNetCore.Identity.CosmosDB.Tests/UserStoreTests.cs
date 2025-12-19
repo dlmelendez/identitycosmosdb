@@ -1,12 +1,13 @@
 ﻿// MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.AspNetCore.Identity;
-using System.Linq;
-using ElCamino.AspNetCore.Identity.CosmosDB.Tests.ModelTests;
-using System.Security.Claims;
-using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Text.Json;
+using System.Threading.Tasks;
+using ElCamino.AspNetCore.Identity.CosmosDB.Tests.ModelTests;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using IdentityRole = ElCamino.AspNetCore.Identity.CosmosDB.Model.IdentityRole;
 using IdentityUser = ElCamino.AspNetCore.Identity.CosmosDB.Model.IdentityUser;
 
@@ -22,6 +23,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         private ApplicationUser currentRoleUser = null;
 
         private TestContext testContextInstance;
+        private readonly JsonSerializerOptions JsonOptions = new()
+        {
+            WriteIndented = true
+        };
+
         /// <summary>
         ///Gets or sets the test context which provides
         ///information about and functionality for the current test run.
@@ -88,13 +94,12 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         }
         #endregion
 
-        private void WriteLineObject<t> (t obj)  where t : class
+        private void WriteLineObject<T>(T obj) where T : class
         {
-            Console.WriteLine(typeof(t).Name);
-            string strLine = obj == null ? "Null" : Newtonsoft.Json.JsonConvert.SerializeObject(obj, Newtonsoft.Json.Formatting.Indented);
+            Console.WriteLine(typeof(T).Name);
+            string strLine = obj is null ? "Null" : JsonSerializer.Serialize(obj, JsonOptions);
             Console.WriteLine("{0}", strLine);
         }
-
         private static Claim GenAdminClaim()
         {
             return new Claim(Constants.AccountClaimTypes.AccountTestAdminClaim, Guid.NewGuid().ToString());
