@@ -5,7 +5,7 @@
     <AssemblyTitle>Azure CosmosDB Provider for ASP.NET Identity Core</AssemblyTitle>
     <Authors>David Melendez</Authors>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-	<LangVersion>10.0</LangVersion>
+	  <LangVersion>14.0</LangVersion>
     <AssemblyName>ElCamino.AspNetCore.Identity.CosmosDB</AssemblyName>
     <AssemblyOriginatorKeyFile>../../tools/Key.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
@@ -23,13 +23,13 @@
     <RepositoryUrl>https://github.com/dlmelendez/identitycosmosdb.git</RepositoryUrl>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Version>6.0</Version>
-    <AssemblyVersion>6.0</AssemblyVersion>
-    <FileVersion>6.0</FileVersion>
     <PackageProjectUrl>https://github.com/dlmelendez/identitycosmosdb</PackageProjectUrl>
     <DebugType>Full</DebugType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <NeutralLanguage>en-US</NeutralLanguage>
 
   </PropertyGroup>
   <ItemGroup>
@@ -58,6 +58,10 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Include="projectNugetPic.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
