@@ -410,11 +410,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Assert.IsNotNull(changedUser);
             Assert.IsFalse(originalPlainUserName.Equals(changedUser.UserName, StringComparison.OrdinalIgnoreCase), "UserName property not updated.");
 
-            Assert.AreEqual<int>(firstUser.Roles.Count, changedUser.Roles.Count);
+            Assert.HasCount(firstUser.Roles.Count, changedUser.Roles);
 
-            Assert.AreEqual<int>(firstUser.Claims.Count, changedUser.Claims.Count);
+            Assert.HasCount(firstUser.Claims.Count, changedUser.Claims);
 
-            Assert.AreEqual<int>(firstUser.Logins.Count, changedUser.Logins.Count);
+            Assert.HasCount(firstUser.Logins.Count, changedUser.Logins);
 
             Assert.AreEqual<string>(originalUserId, changedUser.Id);
             Assert.AreNotEqual<string>(originalPlainUserName, changedUser.UserName);
@@ -678,7 +678,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Assert.IsTrue(userRemoveLoginTask.Succeeded, string.Concat(userRemoveLoginTask.Errors));
            
             var loginGetTask3 = await manager.GetLoginsAsync(user);
-            Assert.IsTrue(!loginGetTask3.Any(), "LoginInfo not removed");
+            Assert.IsFalse(loginGetTask3.Any(), "LoginInfo not removed");
 
             //Negative cases
 
@@ -791,7 +791,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
             var getout = string.Format("{0} ms", (DateTime.UtcNow - getRolesStart).TotalMilliseconds);
             Console.WriteLine(getout);
-            Assert.IsTrue(tempRoles.Contains(roleName), "Role not found");
+            Assert.Contains(roleName, tempRoles, "Role not found");
 
             DateTime isInRolesStart = DateTime.UtcNow;
 
