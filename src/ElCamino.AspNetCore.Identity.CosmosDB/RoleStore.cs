@@ -123,7 +123,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             return IdentityResult.Success;
         }
 
-        public async override Task<IdentityResult> UpdateAsync(TRole role, CancellationToken cancellationToken = default)
+        public override async Task<IdentityResult> UpdateAsync(TRole role, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -138,7 +138,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             return IdentityResult.Success;
         }
 
-        public async override Task<IdentityResult> DeleteAsync(TRole role, CancellationToken cancellationToken = default)
+        public override async Task<IdentityResult> DeleteAsync(TRole role, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();

@@ -85,7 +85,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         }
 
-        public async override Task<IList<TUser>> GetUsersForClaimAsync(Claim claim, CancellationToken cancellationToken = default)
+        public override async Task<IList<TUser>> GetUsersForClaimAsync(Claim claim, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -366,7 +366,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// </summary>
         public TContext Context { get; private set; }
 
-        internal protected async IAsyncEnumerable<Q> ExecuteSqlQuery<Q>(QueryDefinition sqlQuery, QueryRequestOptions queryOptions = null) where Q : class
+        protected internal async IAsyncEnumerable<Q> ExecuteSqlQuery<Q>(QueryDefinition sqlQuery, QueryRequestOptions queryOptions = null) where Q : class
         {
             queryOptions ??= Context.QueryOptions;
 
@@ -455,7 +455,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="user">The user to create.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>The <see cref="Task"/> that represents the asynchronous operation, containing the <see cref="IdentityResult"/> of the creation operation.</returns>
-        public async override Task<IdentityResult> CreateAsync(TUser user, CancellationToken cancellationToken = default)
+        public override async Task<IdentityResult> CreateAsync(TUser user, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -907,7 +907,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                                 .ConfigureAwait(false);
         }
 
-        public async virtual Task<IList<TUser>> FindAllByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
+        public virtual async Task<IList<TUser>> FindAllByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
