@@ -7,10 +7,11 @@ using Microsoft.AspNetCore.Identity;
 using System.Net;
 using Microsoft.Azure.Cosmos;
 using System.Threading;
-using ElCamino.AspNetCore.Identity.CosmosDB.Extensions;
 using System.Security.Claims;
 using ElCamino.AspNetCore.Identity.CosmosDB.Helpers;
-
+#if NETSTANDARD2_0 || NET8_0
+using ElCamino.AspNetCore.Identity.CosmosDB.Extensions;
+#endif
 namespace ElCamino.AspNetCore.Identity.CosmosDB
 {
 
@@ -56,12 +57,13 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 throw new ArgumentNullException(nameof(role));
             }
 
-            role = await FindByIdAsync(role.Id);
+            role = await FindByIdAsync(role.Id, cancellationToken);
             if (role != null)
-                return await role.Claims.Select(c => new Claim(c.ClaimType, c.ClaimValue))
-                    .ToListAsync(cancellationToken: cancellationToken)
+            {
+                return await Task.FromResult(role.Claims.Select(c => new Claim(c.ClaimType, c.ClaimValue)).ToList())
                     .ConfigureAwait(false);
-            return new List<Claim>();
+            }
+            return [];
         }
 
         /// <summary>

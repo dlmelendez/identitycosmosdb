@@ -188,7 +188,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             where A : Exception 
             where I : Exception
         {
-            var ex = Assert.ThrowsException<A>(action).InnerException;
+            var ex = Assert.Throws<A>(action).InnerException;
             Assert.IsTrue(ex is I, string.Format("Exception is not correct type: {0}", ex.GetType().Name));
         }
 

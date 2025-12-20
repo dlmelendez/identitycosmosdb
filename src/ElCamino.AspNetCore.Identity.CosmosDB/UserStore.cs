@@ -81,7 +81,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                     .ToListAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             }
 
-            return new List<String>();
+            return [];
 
         }
 

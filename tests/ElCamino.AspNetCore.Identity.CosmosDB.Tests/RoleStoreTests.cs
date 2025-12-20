@@ -144,7 +144,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var role = await CreateRoleHelper(manager);
             WriteLineObject<IdentityRole>(role);
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.CreateAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.CreateAsync(null));
               
         }
 
@@ -163,7 +163,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             RoleStore<IdentityRole, IdentityCloudContext> store = new RoleStore<IdentityRole, IdentityCloudContext>(new IdentityCloudContext(GetConfig()), new IdentityErrorDescriber());
             store.Dispose();
 
-            await Assert.ThrowsExceptionAsync<ObjectDisposedException>(async() => await store.DeleteAsync(new IdentityRole()));
+            await Assert.ThrowsAsync<ObjectDisposedException>(async() => await store.DeleteAsync(new IdentityRole()));
         }
 
         [TestMethod]
@@ -185,7 +185,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Assert.IsNotNull(findTask, "Find Role Result is null");
             Assert.AreNotEqual<string>(roleNew, findTask.Name, "Name not updated.");
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.UpdateAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.UpdateAsync(null));
         }
 
         [TestMethod]
@@ -226,7 +226,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var findTask = await manager.FindByIdAsync(role.Id);
             Assert.IsNull(findTask, "Role not deleted ");
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.DeleteAsync(null));               
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.DeleteAsync(null));               
         }
 
 

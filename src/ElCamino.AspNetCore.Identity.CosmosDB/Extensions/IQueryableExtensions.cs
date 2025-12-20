@@ -9,31 +9,13 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Extensions
 {
     internal static class IQueryableExtensions
     {
-        public static async Task<T> FirstOrDefaultAsync<T>(
-                    this IAsyncEnumerable<T> asyncEnumerable,
-                    CancellationToken cancellationToken = default)
+        public static Task<TSource> SingleOrDefaultAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> where = null, CancellationToken cancellationToken = default)
         {
-            await using var enumerator = asyncEnumerable.GetAsyncEnumerator(cancellationToken);
-            if (await enumerator.MoveNextAsync().ConfigureAwait(false))
-            {
-                return enumerator.Current;
-            }
-            return default;
+            cancellationToken.ThrowIfCancellationRequested();
+            if (where == null)
+                return Task.FromResult(source.SingleOrDefault());
+            return Task.FromResult(source.Where(where).SingleOrDefault());
         }
-
-        public static async Task<List<T>> ToListAsync<T>(
-            this IAsyncEnumerable<T> asyncEnumerable,
-            CancellationToken cancellationToken = default)
-        {
-            await using var enumerator = asyncEnumerable.GetAsyncEnumerator(cancellationToken);
-            List<T> list = new List<T>();
-            while (await enumerator.MoveNextAsync().ConfigureAwait(false))
-            {
-                list.Add(enumerator.Current);
-            }
-            return list;
-        }
-
         public static Task<TSource> FirstOrDefaultAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> where = null, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -57,12 +39,36 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Extensions
             return Task.FromResult(source.Where(where).ToList());
         }
 
-        public static Task<TSource> SingleOrDefaultAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> where = null, CancellationToken cancellationToken = default)
+
+#if NETSTANDARD2_0 || NET8_0
+       
+        public static async Task<List<T>> ToListAsync<T>(
+           this IAsyncEnumerable<T> asyncEnumerable,
+           CancellationToken cancellationToken = default)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (where == null)
-                return Task.FromResult(source.SingleOrDefault());
-            return Task.FromResult(source.Where(where).SingleOrDefault());
+            await using var enumerator = asyncEnumerable.GetAsyncEnumerator(cancellationToken);
+            List<T> list = new List<T>();
+            while (await enumerator.MoveNextAsync().ConfigureAwait(false))
+            {
+                list.Add(enumerator.Current);
+            }
+            return list;
         }
+
+        public static async Task<T> FirstOrDefaultAsync<T>(
+            this IAsyncEnumerable<T> asyncEnumerable,
+            CancellationToken cancellationToken = default)
+        {
+            await using var enumerator = asyncEnumerable.GetAsyncEnumerator(cancellationToken);
+            if (await enumerator.MoveNextAsync().ConfigureAwait(false))
+            {
+                return enumerator.Current;
+            }
+            return default;
+        }
+
+
+#endif
     }
 }
+

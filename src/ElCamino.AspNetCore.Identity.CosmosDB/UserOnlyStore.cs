@@ -1,16 +1,10 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Security.Claims;
-using System.Text;
-using Azure;
-using ElCamino.AspNetCore.Identity.CosmosDB.Extensions;
-using ElCamino.AspNetCore.Identity.CosmosDB.Model;
-using Microsoft.AspNetCore.Identity;
-using System.Threading.Tasks;
 using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB
 {

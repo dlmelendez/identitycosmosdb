@@ -33,9 +33,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var taskAccessReset = await manager.ResetAccessFailedCountAsync(user);
             Assert.IsTrue(taskAccessReset.Succeeded, string.Concat(taskAccessReset.Errors));
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.GetAccessFailedCountAsync(null));
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.IncrementAccessFailedCountAsync(null));
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.ResetAccessFailedCountAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetAccessFailedCountAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.IncrementAccessFailedCountAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.ResetAccessFailedCountAsync(null));
         }
 
         private async Task SetValidateEmail(UserManager<ApplicationUser> manager,
@@ -99,8 +99,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             string strNewEmail = string.Format("{0}@gmail.com", Guid.NewGuid().ToString("N"));
             await SetValidateEmail(manager, store, user, strNewEmail);
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => store.GetEmailAsync(null));
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(() => store.SetEmailAsync(null, strNewEmail));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => store.GetEmailAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => store.SetEmailAsync(null, strNewEmail));
             await store.SetEmailAsync(user, null);
             Assert.IsNull(user.Email);
         }
@@ -128,8 +128,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var taskConfirmGet = await store.GetEmailConfirmedAsync(user);
             Assert.IsTrue(taskConfirmGet, "Email not confirmed");
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.SetEmailConfirmedAsync(null, true));
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.GetEmailConfirmedAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.SetEmailConfirmedAsync(null, true));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetEmailConfirmedAsync(null));
 
         }
 
@@ -173,10 +173,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var minOffSet = DateTimeOffset.MinValue;
             await store.SetLockoutEndDateAsync(user, minOffSet);
             Assert.IsNotNull(user.LockoutEnd);
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.GetLockoutEnabledAsync(null));
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.GetLockoutEndDateAsync(null));
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.SetLockoutEndDateAsync(null, offSet));
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.SetLockoutEnabledAsync(null, false));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetLockoutEnabledAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.GetLockoutEndDateAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.SetLockoutEndDateAsync(null, offSet));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.SetLockoutEnabledAsync(null, false));
         }
 
         [TestMethod]
@@ -198,8 +198,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var taskUser = await manager.GetPhoneNumberAsync(user);
             Assert.AreEqual<string>(strNewPhoneNumber, taskUser);
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.GetPhoneNumberAsync(null));
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.SetPhoneNumberAsync(null, strNewPhoneNumber));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetPhoneNumberAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.SetPhoneNumberAsync(null, strNewPhoneNumber));
             await store.SetPhoneNumberAsync(user, null);
             Assert.IsNull(user.PhoneNumber);
         }
@@ -229,8 +229,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var taskConfirmGet = await store.GetPhoneNumberConfirmedAsync(user);
             Assert.IsTrue(taskConfirmGet, "Phone not confirmed");
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.SetPhoneNumberConfirmedAsync(null, true));
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.GetPhoneNumberConfirmedAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.SetPhoneNumberConfirmedAsync(null, true));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetPhoneNumberConfirmedAsync(null));
 
         }
 
@@ -252,8 +252,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var taskUser = await manager.GetTwoFactorEnabledAsync(user);
             Assert.AreEqual<bool>(twoFactorEnabled, taskUser);
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.GetTwoFactorEnabledAsync(null));
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.SetTwoFactorEnabledAsync(null, twoFactorEnabled));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetTwoFactorEnabledAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.SetTwoFactorEnabledAsync(null, twoFactorEnabled));
 
         }
 
@@ -280,9 +280,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Assert.AreEqual<string>(passwordHash, taskUser);
             user.PasswordHash = passwordHash;
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.GetPasswordHashAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetPasswordHashAsync(null));
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.SetPasswordHashAsync(null, passwordHash));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.SetPasswordHashAsync(null, passwordHash));
 
             await store.SetPasswordHashAsync(user, null);
             Assert.IsNull(user.PasswordHash);
@@ -392,9 +392,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             string strNewSecurityStamp = Guid.NewGuid().ToString("N");
             await store.SetSecurityStampAsync(user, strNewSecurityStamp);
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.GetSecurityStampAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetSecurityStampAsync(null));
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.SetSecurityStampAsync(null, strNewSecurityStamp));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.SetSecurityStampAsync(null, strNewSecurityStamp));
 
         }
 
