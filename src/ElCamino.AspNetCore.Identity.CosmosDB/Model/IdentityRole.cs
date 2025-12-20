@@ -59,7 +59,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Model
 
         public virtual string PartitionKey { get; set; }
 
-        public virtual IList<TRoleClaim> Claims { get; } = new List<TRoleClaim>();
+        public virtual IList<TRoleClaim> Claims { get; } = [];
 
         public override string Name { get; set; }
 

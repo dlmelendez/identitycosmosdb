@@ -46,7 +46,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Extensions
            CancellationToken cancellationToken = default)
         {
             await using var enumerator = asyncEnumerable.GetAsyncEnumerator(cancellationToken);
-            List<T> list = new List<T>();
+            List<T> list = [];
             while (await enumerator.MoveNextAsync().ConfigureAwait(false))
             {
                 list.Add(enumerator.Current);

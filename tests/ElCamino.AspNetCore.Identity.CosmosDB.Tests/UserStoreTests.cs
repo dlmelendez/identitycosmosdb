@@ -257,7 +257,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Console.WriteLine("User Id: {0}", user.Id);
             user = await manager.FindByIdAsync(user.Id);
             Assert.IsTrue(taskUser.Succeeded, string.Concat(taskUser.Errors));
-            List<Claim> lClaims = new List<Claim>();
+            List<Claim> lClaims = [];
             for (int i = 0; i < 2; i++)
             {
                 if (includeRoles)

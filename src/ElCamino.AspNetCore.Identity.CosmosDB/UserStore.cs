@@ -137,7 +137,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 return await ExecuteSqlQuery<TUser>(query, Context.QueryOptions)
                                 .ToListAsync(cancellationToken: cancellationToken);
             }
-            return new List<TUser>();
+            return [];
         }
 
         protected override async Task<Model.IdentityUserToken<string>> FindTokenAsync(TUser user, string loginProvider, string name, CancellationToken cancellationToken)
@@ -464,7 +464,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 throw new ArgumentNullException(nameof(user));
             }
 
-            var doc = await Context.IdentityContainer.CreateItemAsync<TUser>(user, new PartitionKey(user.PartitionKey), Context.RequestOptions)
+            var doc = await Context.IdentityContainer.CreateItemAsync<TUser>(user, new PartitionKey(user.PartitionKey), Context.RequestOptions, cancellationToken)
                 .ConfigureAwait(false);
             Context.SetSessionTokenIfEmpty(doc.Headers.Session);
             return IdentityResult.Success;
@@ -492,7 +492,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 //TODO: Investigate why UserManager is updating twice with different ETag
                 //ro.IfMatchEtag = user.ETag;
 
-                var doc = await Context.IdentityContainer.ReplaceItemAsync<TUser>(user, user.Id.ToString(), new PartitionKey(user.PartitionKey), ro)
+                var doc = await Context.IdentityContainer.ReplaceItemAsync<TUser>(user, user.Id.ToString(), new PartitionKey(user.PartitionKey), ro, cancellationToken)
                     .ConfigureAwait(false);
                 Context.SetSessionTokenIfEmpty(doc.Headers.Session);
                 user = doc.Resource;
@@ -537,7 +537,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             try
             {
-                var doc = await Context.IdentityContainer.DeleteItemAsync<TUser>(user.Id.ToString(), new PartitionKey(user.PartitionKey), Context.RequestOptions)
+                var doc = await Context.IdentityContainer.DeleteItemAsync<TUser>(user.Id.ToString(), new PartitionKey(user.PartitionKey), Context.RequestOptions, cancellationToken)
                     .ConfigureAwait(false);
                 Context.SetSessionTokenIfEmpty(doc.Headers.Session);
             }

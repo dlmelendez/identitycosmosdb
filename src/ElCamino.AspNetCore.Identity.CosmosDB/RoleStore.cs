@@ -118,7 +118,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 throw new ArgumentNullException(nameof(role));
             }
 
-            var doc = await Context.IdentityContainer.CreateItemAsync<TRole>(role, new PartitionKey(role.PartitionKey), Context.RequestOptions);
+            var doc = await Context.IdentityContainer.CreateItemAsync<TRole>(role, new PartitionKey(role.PartitionKey), Context.RequestOptions, cancellationToken);
             Context.SetSessionTokenIfEmpty(doc.Headers.Session);
             return IdentityResult.Success;
         }
@@ -133,7 +133,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             }
 
             role.ConcurrencyStamp = Guid.NewGuid().ToString();
-            var doc = await Context.IdentityContainer.UpsertItemAsync<TRole>(role, new PartitionKey(role.PartitionKey), Context.RequestOptions);
+            var doc = await Context.IdentityContainer.UpsertItemAsync<TRole>(role, new PartitionKey(role.PartitionKey), Context.RequestOptions, cancellationToken);
             Context.SetSessionTokenIfEmpty(doc.Headers.Session);
             return IdentityResult.Success;
         }
@@ -146,7 +146,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             {
                 throw new ArgumentNullException(nameof(role));
             }
-            var doc = await Context.IdentityContainer.DeleteItemAsync<TRole>(role.Id.ToString(), new PartitionKey(role.PartitionKey), Context.RequestOptions);
+            var doc = await Context.IdentityContainer.DeleteItemAsync<TRole>(role.Id.ToString(), new PartitionKey(role.PartitionKey), Context.RequestOptions, cancellationToken);
             Context.SetSessionTokenIfEmpty(doc.Headers.Session);
 
             return IdentityResult.Success;
@@ -210,7 +210,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             if (feedIterator.HasMoreResults)
             {
-                return (await feedIterator.ReadNextAsync()).FirstOrDefault();
+                return (await feedIterator.ReadNextAsync(cancellationToken)).FirstOrDefault();
             }
 
             return null;

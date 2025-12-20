@@ -31,7 +31,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Model
 
         public IdentityUser(string userName) : base(userName) { }
 
-        public virtual IList<TUserRole> Roles { get; } = new List<TUserRole>();
+        public virtual IList<TUserRole> Roles { get; } = [];
 
     }
 
@@ -68,9 +68,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Model
 
         public override string ConcurrencyStamp { get; set; } = Guid.NewGuid().ToString();
         
-        public virtual IList<TUserClaim> Claims { get; } = new List<TUserClaim>();
+        public virtual IList<TUserClaim> Claims { get; } = [];
 
-        public virtual IList<TUserLogin> Logins { get; } = new List<TUserLogin>();
+        public virtual IList<TUserLogin> Logins { get; } = [];
         
         public override string ToString()
         {
