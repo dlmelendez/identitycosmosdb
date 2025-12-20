@@ -965,17 +965,17 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
             Assert.IsTrue(userClaimTask2.Succeeded, string.Concat(userClaimTask2.Errors));
 
-            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.AddClaimsAsync(null, new List<Claim>() { claim }, TestContext.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.AddClaimsAsync(null, [claim], TestContext.CancellationToken));
 
             await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.AddClaimsAsync(user, null, TestContext.CancellationToken));
 
-            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.RemoveClaimsAsync(null, new List<Claim>() { claim }, TestContext.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.RemoveClaimsAsync(null, [claim], TestContext.CancellationToken));
 
             await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.RemoveClaimsAsync(user, null, TestContext.CancellationToken));
 
-            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.RemoveClaimsAsync(user, new List<Claim>() { new Claim(claim.Type, null) }, TestContext.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.RemoveClaimsAsync(user, [new Claim(claim.Type, null)], TestContext.CancellationToken));
 
-            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.AddClaimsAsync(null, new List<Claim>() { claim }, TestContext.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.AddClaimsAsync(null, [claim], TestContext.CancellationToken));
         }
 
         [TestMethod]
