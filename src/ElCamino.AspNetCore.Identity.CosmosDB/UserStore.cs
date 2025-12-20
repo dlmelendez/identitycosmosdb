@@ -59,10 +59,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(user);
+#else
             if (user == null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
+#endif
 
             var userId = user.Id;
 
@@ -89,10 +93,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(claim);
+#else
             if (claim == null)
             {
                 throw new ArgumentNullException(nameof(claim));
             }
+#endif
             QueryDefinition query = new QueryDefinition("SELECT VALUE u " +
                    "FROM ROOT u " +
                    "JOIN uc in u.claims " +
@@ -150,10 +158,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(user);
+#else
             if (user == null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
+#endif
             if (string.IsNullOrWhiteSpace(normalizedRoleName))
             {
                 throw new ArgumentException(Resources.ValueCannotBeNullOrEmpty, nameof(normalizedRoleName));
@@ -352,7 +364,12 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="describer">The <see cref="IdentityErrorDescriber"/> used to describe store errors.</param>
         public UserStore(TContext context, IdentityErrorDescriber describer = null): base(describer)
         {
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(context);
+            Context = context;
+#else
             Context = context ?? throw new ArgumentNullException(nameof(context));
+#endif
             ErrorDescriber = describer ?? new IdentityErrorDescriber();
         }
 
@@ -455,10 +472,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(user);
+#else
             if (user == null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
+#endif
 
             var doc = await Context.IdentityContainer.CreateItemAsync<TUser>(user, new PartitionKey(user.PartitionKey), Context.RequestOptions, cancellationToken)
                 .ConfigureAwait(false);
@@ -476,10 +497,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(user);
+#else
             if (user == null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
+#endif
 
             user.ConcurrencyStamp = Guid.NewGuid().ToString();
             try
@@ -526,10 +551,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(user);
+#else
             if (user == null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
+#endif
 
             try
             {
@@ -605,10 +634,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(user);
+#else
             if (user == null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
+#endif
             if (string.IsNullOrWhiteSpace(normalizedRoleName))
             {
                 throw new ArgumentException(Resources.ValueCannotBeNullOrEmpty, nameof(normalizedRoleName));
@@ -639,10 +672,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(user);
+#else
             if (user == null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
+#endif
             if (string.IsNullOrWhiteSpace(normalizedRoleName))
             {
                 throw new ArgumentException(Resources.ValueCannotBeNullOrEmpty, nameof(normalizedRoleName));
@@ -681,10 +718,15 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         public override async Task<IList<Claim>> GetClaimsAsync(TUser user, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(user);
+#else
             if (user == null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
+#endif
+
 
             return await user.Claims.Where(uc => uc.UserId.Equals(user.Id)).Select(c => c.ToClaim())
                 .ToListAsync(cancellationToken: cancellationToken)
@@ -701,6 +743,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         public override Task AddClaimsAsync(TUser user, IEnumerable<Claim> claims, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(user);
+            ArgumentNullException.ThrowIfNull(claims);
+#else
             if (user == null)
             {
                 throw new ArgumentNullException(nameof(user));
@@ -709,6 +755,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             {
                 throw new ArgumentNullException(nameof(claims));
             }
+#endif
             foreach (var claim in claims)
             {
                 user.Claims.Add(CreateUserClaim(user, claim));
@@ -727,6 +774,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         public override async Task ReplaceClaimAsync(TUser user, Claim claim, Claim newClaim, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(user);
+            ArgumentNullException.ThrowIfNull(claim);
+            ArgumentNullException.ThrowIfNull(newClaim);
+#else
             if (user == null)
             {
                 throw new ArgumentNullException(nameof(user));
@@ -739,6 +791,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             {
                 throw new ArgumentNullException(nameof(newClaim));
             }
+#endif
 
             var matchedClaims = await UserClaims.Where(uc => uc.UserId.Equals(user.Id) && uc.ClaimValue == claim.Value && uc.ClaimType == claim.Type)
                 .ToListAsync(cancellationToken: cancellationToken)
@@ -760,6 +813,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         public override async Task RemoveClaimsAsync(TUser user, IEnumerable<Claim> claims, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(user);
+            ArgumentNullException.ThrowIfNull(claims);
+#else
             if (user == null)
             {
                 throw new ArgumentNullException(nameof(user));
@@ -768,6 +825,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             {
                 throw new ArgumentNullException(nameof(claims));
             }
+#endif
             foreach (var claim in claims)
             {
                 var matchedClaims = await user.Claims.Where(uc => uc.UserId.Equals(user.Id) && uc.ClaimValue == claim.Value && uc.ClaimType == claim.Type)
@@ -793,6 +851,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(user);
+            ArgumentNullException.ThrowIfNull(login);
+#else
             if (user == null)
             {
                 throw new ArgumentNullException(nameof(user));
@@ -801,6 +863,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             {
                 throw new ArgumentNullException(nameof(login));
             }
+#endif
             user.Logins.Add(CreateUserLogin(user, login));
             return Task.CompletedTask;
         }
@@ -818,10 +881,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(user);
+#else
             if (user == null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
+#endif
             var entry = user.Logins.SingleOrDefault(userLogin => userLogin.UserId.Equals(user.Id) && userLogin.LoginProvider == loginProvider && userLogin.ProviderKey == providerKey);
             if (entry != null)
             {
@@ -842,10 +909,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(user);
+#else
             if (user == null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
+#endif
             var userId = user.Id;
             return await user.Logins.Where(l => l.UserId.Equals(userId))
                 .Select(l => new UserLoginInfo(l.LoginProvider, l.ProviderKey, l.ProviderDisplayName))

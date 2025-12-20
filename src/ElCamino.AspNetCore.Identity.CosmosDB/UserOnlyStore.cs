@@ -39,7 +39,12 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         public UserOnlyStore(TContext context) : base(new IdentityErrorDescriber())
         {
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(context);
+            Context = context;
+#else
             Context = context ?? throw new ArgumentNullException(nameof(context));
+#endif
         }
 
         public override Task<IdentityResult> CreateAsync(TUser user, CancellationToken cancellationToken = default)
