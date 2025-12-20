@@ -1,4 +1,4 @@
-﻿// MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
+﻿// MIT License Copyright (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.AspNetCore.Identity;
@@ -26,7 +26,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Assert.AreEqual<int>(user.AccessFailedCount, taskUser);
 
             var taskAccessFailed = await manager.AccessFailedAsync(user);
-            Assert.IsTrue(taskAccessFailed.Succeeded, string.Concat(taskAccessFailed.Errors.Select(e => e.Code).ToArray()));
+            Assert.IsTrue(taskAccessFailed.Succeeded, string.Concat([.. taskAccessFailed.Errors.Select(e => e.Code)]));
 
             user = await manager.FindByIdAsync(user.Id);
 
@@ -39,7 +39,6 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         }
 
         private static async Task SetValidateEmail(UserManager<ApplicationUser> manager,
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store,
             ApplicationUser user,
             string strNewEmail)
         {
@@ -80,9 +79,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
             var user = await CreateTestUser<ApplicationUser>(false, false);
             string strNewEmail = string.Format("{0}@hotmail.com", Guid.NewGuid().ToString("N"));
-            await UserStoreTests.SetValidateEmail(manager, store, user, strNewEmail);
+            await UserStoreTests.SetValidateEmail(manager, user, strNewEmail);
 
-            await UserStoreTests.SetValidateEmail(manager, store, user, string.Empty);
+            await UserStoreTests.SetValidateEmail(manager, user, string.Empty);
 
         }
 
@@ -97,7 +96,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var user = await CurrentUser(includeRoles);
 
             string strNewEmail = string.Format("{0}@gmail.com", Guid.NewGuid().ToString("N"));
-            await UserStoreTests.SetValidateEmail(manager, store, user, strNewEmail);
+            await UserStoreTests.SetValidateEmail(manager, user, strNewEmail);
 
             await Assert.ThrowsAsync<ArgumentNullException>(() => store.GetEmailAsync(null, TestContext.CancellationToken));
             await Assert.ThrowsAsync<ArgumentNullException>(() => store.SetEmailAsync(null, strNewEmail, TestContext.CancellationToken));
