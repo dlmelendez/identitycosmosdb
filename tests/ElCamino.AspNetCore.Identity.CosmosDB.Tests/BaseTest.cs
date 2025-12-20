@@ -42,8 +42,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         }
         #endregion
 
-        protected static IServiceProvider Provider;
-        protected static IServiceProvider RoleProvider;
+        protected static IServiceProvider Provider { get; private set; }
+        protected static IServiceProvider RoleProvider { get; private set; }
 
         static BaseTest()
         {

@@ -38,7 +38,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.ResetAccessFailedCountAsync(null, TestContext.CancellationToken));
         }
 
-        private async Task SetValidateEmail(UserManager<ApplicationUser> manager,
+        private static async Task SetValidateEmail(UserManager<ApplicationUser> manager,
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store,
             ApplicationUser user,
             string strNewEmail)
@@ -80,9 +80,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
             var user = await CreateTestUser<ApplicationUser>(false, false);
             string strNewEmail = string.Format("{0}@hotmail.com", Guid.NewGuid().ToString("N"));
-            await SetValidateEmail(manager, store, user, strNewEmail);
+            await UserStoreTests.SetValidateEmail(manager, store, user, strNewEmail);
 
-            await SetValidateEmail(manager, store, user, string.Empty);
+            await UserStoreTests.SetValidateEmail(manager, store, user, string.Empty);
 
         }
 
@@ -97,7 +97,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var user = await CurrentUser(includeRoles);
 
             string strNewEmail = string.Format("{0}@gmail.com", Guid.NewGuid().ToString("N"));
-            await SetValidateEmail(manager, store, user, strNewEmail);
+            await UserStoreTests.SetValidateEmail(manager, store, user, strNewEmail);
 
             await Assert.ThrowsAsync<ArgumentNullException>(() => store.GetEmailAsync(null, TestContext.CancellationToken));
             await Assert.ThrowsAsync<ArgumentNullException>(() => store.SetEmailAsync(null, strNewEmail, TestContext.CancellationToken));
@@ -302,7 +302,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             WriteLineObject<IdentityUser>(list.First());
 
             Console.WriteLine("UserQuery: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
-            Console.WriteLine("UserQuery: {0} users", list.Count());
+            Console.WriteLine("UserQuery: {0} users", list.Count);
             Console.WriteLine("");
 
             string email = "A" + Guid.NewGuid().ToString() + "@gmail.com";
@@ -312,16 +312,16 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var list3 = manager.Users.Where(w=> w.Email == email).Select(s => s.Email).ToList();
 
             Console.WriteLine("UserQuery: {0} seconds", (DateTime.UtcNow - start3).TotalSeconds);
-            Console.WriteLine("UserQuery.Email: {0} users", list3.Count());
+            Console.WriteLine("UserQuery.Email: {0} users", list3.Count);
             Console.WriteLine("");
-            Assert.AreEqual<int>(1, list3.Count());
+            Assert.HasCount(1, list3);
 
             DateTime start4 = DateTime.UtcNow;
             var list4 = manager.Users.Select(s => s).ToList();
             WriteLineObject<IdentityUser>(list4.First());
 
             Console.WriteLine("UserQuery: {0} seconds", (DateTime.UtcNow - start4).TotalSeconds);
-            Console.WriteLine("UserQuery: {0} users", list4.Count());
+            Console.WriteLine("UserQuery: {0} users", list4.Count);
             Console.WriteLine("");
 
             var type = store.Users.ElementType;
@@ -351,7 +351,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             WriteLineObject<IdentityUser>(list.First());
 
             Console.WriteLine("UserQuery: {0} seconds", (DateTime.UtcNow - start5).TotalSeconds);
-            Console.WriteLine("UserQuery: {0} users", list5.Count());
+            Console.WriteLine("UserQuery: {0} users", list5.Count);
             Console.WriteLine("");          
 
             DateTime start7 = DateTime.UtcNow;
