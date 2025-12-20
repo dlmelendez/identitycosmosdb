@@ -33,9 +33,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var taskAccessReset = await manager.ResetAccessFailedCountAsync(user);
             Assert.IsTrue(taskAccessReset.Succeeded, string.Concat(taskAccessReset.Errors));
 
-            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetAccessFailedCountAsync(null));
-            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.IncrementAccessFailedCountAsync(null));
-            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.ResetAccessFailedCountAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetAccessFailedCountAsync(null, TestContext.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.IncrementAccessFailedCountAsync(null, TestContext.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.ResetAccessFailedCountAsync(null, TestContext.CancellationToken));
         }
 
         private async Task SetValidateEmail(UserManager<ApplicationUser> manager,
@@ -99,9 +99,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             string strNewEmail = string.Format("{0}@gmail.com", Guid.NewGuid().ToString("N"));
             await SetValidateEmail(manager, store, user, strNewEmail);
 
-            await Assert.ThrowsAsync<ArgumentNullException>(() => store.GetEmailAsync(null));
-            await Assert.ThrowsAsync<ArgumentNullException>(() => store.SetEmailAsync(null, strNewEmail));
-            await store.SetEmailAsync(user, null);
+            await Assert.ThrowsAsync<ArgumentNullException>(() => store.GetEmailAsync(null, TestContext.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentNullException>(() => store.SetEmailAsync(null, strNewEmail, TestContext.CancellationToken));
+            await store.SetEmailAsync(user, null, TestContext.CancellationToken);
             Assert.IsNull(user.Email);
         }
 
@@ -125,11 +125,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
             user = await manager.FindByEmailAsync(user.Email);
 
-            var taskConfirmGet = await store.GetEmailConfirmedAsync(user);
+            var taskConfirmGet = await store.GetEmailConfirmedAsync(user, TestContext.CancellationToken);
             Assert.IsTrue(taskConfirmGet, "Email not confirmed");
 
-            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.SetEmailConfirmedAsync(null, true));
-            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetEmailConfirmedAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.SetEmailConfirmedAsync(null, true, TestContext.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.GetEmailConfirmedAsync(null, TestContext.CancellationToken));
 
         }
 
@@ -161,22 +161,22 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
             DateTime tmpDate = DateTime.UtcNow.AddDays(1);
             user.LockoutEnd = tmpDate;
-            var taskGet = await store.GetLockoutEndDateAsync(user);
+            var taskGet = await store.GetLockoutEndDateAsync(user, TestContext.CancellationToken);
             Assert.AreEqual<DateTimeOffset?>(new DateTimeOffset?(tmpDate), taskGet);
 
 
             user.LockoutEnd = null;
-            var taskGet2 = await store.GetLockoutEndDateAsync(user);
+            var taskGet2 = await store.GetLockoutEndDateAsync(user, TestContext.CancellationToken);
             Assert.AreEqual<DateTimeOffset?>(new DateTimeOffset?(), taskGet2);
 
 
             var minOffSet = DateTimeOffset.MinValue;
-            await store.SetLockoutEndDateAsync(user, minOffSet);
+            await store.SetLockoutEndDateAsync(user, minOffSet, TestContext.CancellationToken);
             Assert.IsNotNull(user.LockoutEnd);
-            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetLockoutEnabledAsync(null));
-            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.GetLockoutEndDateAsync(null));
-            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.SetLockoutEndDateAsync(null, offSet));
-            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.SetLockoutEnabledAsync(null, false));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetLockoutEnabledAsync(null, TestContext.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.GetLockoutEndDateAsync(null, TestContext.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.SetLockoutEndDateAsync(null, offSet, TestContext.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.SetLockoutEnabledAsync(null, false, TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -198,9 +198,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var taskUser = await manager.GetPhoneNumberAsync(user);
             Assert.AreEqual<string>(strNewPhoneNumber, taskUser);
 
-            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetPhoneNumberAsync(null));
-            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.SetPhoneNumberAsync(null, strNewPhoneNumber));
-            await store.SetPhoneNumberAsync(user, null);
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetPhoneNumberAsync(null, TestContext.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.SetPhoneNumberAsync(null, strNewPhoneNumber, TestContext.CancellationToken));
+            await store.SetPhoneNumberAsync(user, null, TestContext.CancellationToken);
             Assert.IsNull(user.PhoneNumber);
         }
 
@@ -226,11 +226,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
             user = await manager.FindByEmailAsync(user.Email);
 
-            var taskConfirmGet = await store.GetPhoneNumberConfirmedAsync(user);
+            var taskConfirmGet = await store.GetPhoneNumberConfirmedAsync(user, TestContext.CancellationToken);
             Assert.IsTrue(taskConfirmGet, "Phone not confirmed");
 
-            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.SetPhoneNumberConfirmedAsync(null, true));
-            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetPhoneNumberConfirmedAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.SetPhoneNumberConfirmedAsync(null, true, TestContext.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetPhoneNumberConfirmedAsync(null, TestContext.CancellationToken));
 
         }
 
@@ -252,8 +252,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var taskUser = await manager.GetTwoFactorEnabledAsync(user);
             Assert.AreEqual<bool>(twoFactorEnabled, taskUser);
 
-            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetTwoFactorEnabledAsync(null));
-            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.SetTwoFactorEnabledAsync(null, twoFactorEnabled));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetTwoFactorEnabledAsync(null, TestContext.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.SetTwoFactorEnabledAsync(null, twoFactorEnabled, TestContext.CancellationToken));
 
         }
 
@@ -270,21 +270,21 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
             string passwordHash = new PasswordHasher<ApplicationUser>().HashPassword(user, passwordPlain);
 
-            await store.SetPasswordHashAsync(user, passwordHash);
+            await store.SetPasswordHashAsync(user, passwordHash, TestContext.CancellationToken);
 
             var taskHasHash = await manager.HasPasswordAsync(user);
 
             Assert.IsTrue(taskHasHash, "PasswordHash not set");
 
-            var taskUser = await store.GetPasswordHashAsync(user);
+            var taskUser = await store.GetPasswordHashAsync(user, TestContext.CancellationToken);
             Assert.AreEqual<string>(passwordHash, taskUser);
             user.PasswordHash = passwordHash;
 
-            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetPasswordHashAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetPasswordHashAsync(null, TestContext.CancellationToken));
 
-            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.SetPasswordHashAsync(null, passwordHash));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.SetPasswordHashAsync(null, passwordHash, TestContext.CancellationToken));
 
-            await store.SetPasswordHashAsync(user, null);
+            await store.SetPasswordHashAsync(user, null, TestContext.CancellationToken);
             Assert.IsNull(user.PasswordHash);
         }
 
@@ -390,11 +390,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Assert.AreEqual<string>(user.SecurityStamp, taskUser);
 
             string strNewSecurityStamp = Guid.NewGuid().ToString("N");
-            await store.SetSecurityStampAsync(user, strNewSecurityStamp);
+            await store.SetSecurityStampAsync(user, strNewSecurityStamp, TestContext.CancellationToken);
 
-            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetSecurityStampAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetSecurityStampAsync(null, TestContext.CancellationToken));
 
-            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.SetSecurityStampAsync(null, strNewSecurityStamp));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.SetSecurityStampAsync(null, strNewSecurityStamp, TestContext.CancellationToken));
 
         }
 

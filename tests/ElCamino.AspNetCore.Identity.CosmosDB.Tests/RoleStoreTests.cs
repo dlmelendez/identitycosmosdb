@@ -106,7 +106,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
                 Name = "SpiderMonkey"
             };
             var docResult = await context.IdentityContainer.CreateItemAsync(
-                doc, new PartitionKey(doc.PartitionKey), context.RequestOptions);
+                doc, new PartitionKey(doc.PartitionKey), context.RequestOptions, TestContext.CancellationToken);
             Console.WriteLine(docResult.Resource.ToString());
 
             var fo = context.QueryOptions;
@@ -129,7 +129,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var role = await CreateRoleHelper(manager);
             WriteLineObject<IdentityRole>(role);
 
-            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.CreateAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.CreateAsync(null, TestContext.CancellationToken));
               
         }
 
@@ -148,7 +148,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             RoleStore<IdentityRole, IdentityCloudContext> store = new RoleStore<IdentityRole, IdentityCloudContext>(new IdentityCloudContext(GetConfig()), new IdentityErrorDescriber());
             store.Dispose();
 
-            await Assert.ThrowsAsync<ObjectDisposedException>(async() => await store.DeleteAsync(new IdentityRole()));
+            await Assert.ThrowsAsync<ObjectDisposedException>(async() => await store.DeleteAsync(new IdentityRole(), TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -170,7 +170,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Assert.IsNotNull(findTask, "Find Role Result is null");
             Assert.AreNotEqual<string>(roleNew, findTask.Name, "Name not updated.");
 
-            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.UpdateAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.UpdateAsync(null, TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -211,7 +211,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var findTask = await manager.FindByIdAsync(role.Id);
             Assert.IsNull(findTask, "Role not deleted ");
 
-            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.DeleteAsync(null));               
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.DeleteAsync(null, TestContext.CancellationToken));               
         }
 
 

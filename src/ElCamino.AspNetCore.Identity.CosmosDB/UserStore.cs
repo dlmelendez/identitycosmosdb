@@ -160,11 +160,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             }
 
             var roleEntity = await Roles.SingleOrDefaultAsync(r => r.NormalizedName == normalizedRoleName, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-            if (roleEntity == null)
-            {
-                throw new InvalidOperationException(String.Format(CultureInfo.CurrentCulture, Resources.RoleNotFound, normalizedRoleName));
-            }
+                .ConfigureAwait(false) ?? throw new InvalidOperationException(String.Format(CultureInfo.CurrentCulture, Resources.RoleNotFound, normalizedRoleName));
             user.Roles.Add(CreateUserRole(user, roleEntity));
 
         }

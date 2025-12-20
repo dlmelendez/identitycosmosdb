@@ -162,10 +162,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             if (!_disposed && disposing)
             {
-                if (Context != null)
-                {
-                    Context.Dispose();
-                }
+                Context?.Dispose();
                 _roleTable = null;
                 Context = null;
                 _disposed = true;
