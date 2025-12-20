@@ -115,7 +115,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             return idconfig;
         }
 
-        public IdentityCloudContext GetContext() => new IdentityCloudContext(GetConfig());
+        public IdentityCloudContext GetContext() => new(GetConfig());
 
         public RoleStore<TRole, TContext> CreateRoleStore(bool includeRoles)
         {

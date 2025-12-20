@@ -198,7 +198,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         private readonly bool _disposed = false;
 
         //Thread safe dictionary 
-        private static readonly ConcurrentDictionary<string, InternalContext> ContextCache = new ConcurrentDictionary<string, InternalContext>();
+        private static readonly ConcurrentDictionary<string, InternalContext> ContextCache = new();
         private readonly string _configHash = null;
         private InternalContext _currentContext = null;
 

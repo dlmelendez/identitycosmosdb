@@ -15,7 +15,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 {
     public partial class UserStoreTests : BaseTest<ApplicationUser, IdentityRole, IdentityCloudContext>
     {
-        private static object objectLock = new object();
+#if NET10_0_OR_GREATER
+        private static readonly System.Threading.Lock objectLock = new();
+#else
+        private static readonly object objectLock = new();
+#endif
         public static readonly string DefaultUserPassword = "M" + Guid.NewGuid().ToString();
 
 
