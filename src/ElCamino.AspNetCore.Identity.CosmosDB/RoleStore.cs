@@ -52,10 +52,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         public override async Task<IList<Claim>> GetClaimsAsync(TRole role, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(role);
+#else
             if (role == null)
             {
                 throw new ArgumentNullException(nameof(role));
             }
+#endif
 
             role = await FindByIdAsync(role.Id, cancellationToken);
             if (role != null)
@@ -76,6 +80,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         public override Task AddClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(role);
+            ArgumentNullException.ThrowIfNull(claim);
+#else
             if (role == null)
             {
                 throw new ArgumentNullException(nameof(role));
@@ -84,6 +92,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             {
                 throw new ArgumentNullException(nameof(claim));
             }
+#endif
 
             role.Claims.Add(CreateRoleClaim(role, claim));
             return Task.CompletedTask;
@@ -104,7 +113,12 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         public RoleStore(TContext context, IdentityErrorDescriber describer = null) : base(describer)
         {
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(context);
+            Context = context;
+#else
             Context = context ?? throw new ArgumentNullException(nameof(context));
+#endif
             _roleTable = context.IdentityContainer;
 
         }
@@ -113,10 +127,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(role);
+#else
             if (role == null)
             {
                 throw new ArgumentNullException(nameof(role));
             }
+#endif
 
             var doc = await Context.IdentityContainer.CreateItemAsync<TRole>(role, new PartitionKey(role.PartitionKey), Context.RequestOptions, cancellationToken);
             Context.SetSessionTokenIfEmpty(doc.Headers.Session);
@@ -127,10 +145,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(role);
+#else
             if (role == null)
             {
                 throw new ArgumentNullException(nameof(role));
             }
+#endif
 
             role.ConcurrencyStamp = Guid.NewGuid().ToString();
             var doc = await Context.IdentityContainer.UpsertItemAsync<TRole>(role, new PartitionKey(role.PartitionKey), Context.RequestOptions, cancellationToken);
@@ -142,10 +164,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(role);
+#else
             if (role == null)
             {
                 throw new ArgumentNullException(nameof(role));
             }
+#endif
             var doc = await Context.IdentityContainer.DeleteItemAsync<TRole>(role.Id.ToString(), new PartitionKey(role.PartitionKey), Context.RequestOptions, cancellationToken);
             Context.SetSessionTokenIfEmpty(doc.Headers.Session);
 
@@ -244,6 +270,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         public override Task RemoveClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
+#if NET10_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(role);
+            ArgumentNullException.ThrowIfNull(claim);
+#else
             if (role == null)
             {
                 throw new ArgumentNullException(nameof(role));
@@ -252,6 +282,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             {
                 throw new ArgumentNullException(nameof(claim));
             }
+#endif
 
             var claims = role.Claims.Where(rc => rc.RoleId.Equals(role.Id) && rc.ClaimValue == claim.Value && rc.ClaimType == claim.Type).ToList();
             foreach (var c in claims)
