@@ -29,8 +29,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Extensions
             cancellationToken.ThrowIfCancellationRequested();
             if (where == null)
             {
-                List<TSource> list = source as List<TSource>;
-                if (list != null)
+                if (source is List<TSource> list)
                 {
                     return Task.FromResult(list);
                 }
