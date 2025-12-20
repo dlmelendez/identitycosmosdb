@@ -75,7 +75,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [DataRow(false, DisplayName = "NoRoleProvider")]
         public async Task EmailNone(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            _ = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
             var user = await CreateTestUser<ApplicationUser>(false, false);
             string strNewEmail = string.Format("{0}@hotmail.com", Guid.NewGuid().ToString("N"));

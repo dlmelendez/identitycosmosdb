@@ -185,7 +185,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var result = await manager.CreateAsync(role);
             Assert.AreEqual(IdentityResult.Success, result);
 
-            role.Name = role.Name + Guid.NewGuid();
+            role.Name += Guid.NewGuid();
             result = await manager.UpdateAsync(role);
             Assert.AreEqual(IdentityResult.Success, result);
 

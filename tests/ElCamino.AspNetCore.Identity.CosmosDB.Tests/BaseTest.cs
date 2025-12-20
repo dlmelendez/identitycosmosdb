@@ -39,11 +39,12 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
         #endregion
 
-        protected static IServiceProvider Provider { get; private set; }
-        protected static IServiceProvider RoleProvider { get; private set; }
+        protected static ServiceProvider Provider { get; private set; }
+        protected static ServiceProvider RoleProvider { get; private set; }
 
         static BaseTest()
         {
@@ -51,12 +52,12 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             RoleProvider = SetProvider(true);
         }
 
-        private static IServiceProvider GetProvider(bool includeRoles)
+        private static ServiceProvider GetProvider(bool includeRoles)
         {
             return includeRoles ? RoleProvider : Provider;
         }
             
-        private static IServiceProvider SetProvider(bool includeRoles)
+        private static ServiceProvider SetProvider(bool includeRoles)
         {
             IdentityBuilder builder = new IdentityBuilder(typeof(TUser), typeof(TRole), new ServiceCollection());
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
