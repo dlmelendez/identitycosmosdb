@@ -52,7 +52,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         public override async Task<IList<Claim>> GetClaimsAsync(TRole role, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(role);
 #else
             if (role is null)
@@ -80,7 +80,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         public override Task AddClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(role);
             ArgumentNullException.ThrowIfNull(claim);
 #else
@@ -113,7 +113,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         public RoleStore(TContext context, IdentityErrorDescriber describer = null) : base(describer)
         {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(context);
             Context = context;
 #else
@@ -127,7 +127,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(role);
 #else
             if (role is null)
@@ -145,7 +145,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(role);
 #else
             if (role is null)
@@ -164,7 +164,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(role);
 #else
             if (role is null)
@@ -270,7 +270,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         public override Task RemoveClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(role);
             ArgumentNullException.ThrowIfNull(claim);
 #else

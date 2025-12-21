@@ -55,7 +55,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         public UserOnlyStore(TContext context) : base(new IdentityErrorDescriber())
         {
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(context);
             Context = context;
 #else
@@ -166,7 +166,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
             if (user is null)
@@ -185,7 +185,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
             if (user is null)
@@ -217,7 +217,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
             if (user is null)
@@ -241,6 +241,15 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         public override async Task<TUser> FindByIdAsync(string userId, CancellationToken cancellationToken = default)
         {
+#if NET8_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(userId);
+#else
+            if (userId is null)
+            {
+                throw new ArgumentNullException(nameof(userId));
+            }
+#endif
+
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
 
@@ -252,6 +261,15 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         public override async Task<TUser> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken = default)
         {
+#if NET8_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(normalizedUserName);
+#else
+            if (normalizedUserName is null)
+            {
+                throw new ArgumentNullException(nameof(normalizedUserName));
+            }
+#endif
+
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
 
@@ -285,7 +303,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         public override async Task<IList<Claim>> GetClaimsAsync(TUser user, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
             if (user is null)
@@ -302,7 +320,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         public override Task AddClaimsAsync(TUser user, IEnumerable<Claim> claims, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
             ArgumentNullException.ThrowIfNull(claims);
 #else
@@ -325,7 +343,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         public override async Task ReplaceClaimAsync(TUser user, Claim claim, Claim newClaim, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
             ArgumentNullException.ThrowIfNull(claim);
             ArgumentNullException.ThrowIfNull(newClaim);
@@ -357,7 +375,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         public override async Task RemoveClaimsAsync(TUser user, IEnumerable<Claim> claims, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
             ArgumentNullException.ThrowIfNull(claims);
 #else
@@ -387,7 +405,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
             ArgumentNullException.ThrowIfNull(login);
 #else
@@ -408,7 +426,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
             if (user is null)
@@ -428,7 +446,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
             if (user is null)
@@ -455,6 +473,20 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// </returns>
         public override async Task<TUser> FindByLoginAsync(string loginProvider, string providerKey, CancellationToken cancellationToken = default)
         {
+#if NET8_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(loginProvider);
+            ArgumentNullException.ThrowIfNull(providerKey);
+#else
+            if (loginProvider is null)
+            {
+                throw new ArgumentNullException(nameof(loginProvider));
+            }
+            if (providerKey is null)
+            {
+                throw new ArgumentNullException(nameof(providerKey));
+            }
+#endif
+
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
             //TODO: Deprecate Stored Proc: getUserByLogin_v1
@@ -471,6 +503,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         public override async Task<TUser> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
         {
+#if NET8_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(normalizedEmail);
+#else
+            if (normalizedEmail is null)
+            {
+                throw new ArgumentNullException(nameof(normalizedEmail));
+            }
+#endif
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
             //TODO: Deprecate Stored Proc: getUserByEmail_v1
@@ -485,6 +525,15 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         public virtual async Task<IList<TUser>> FindAllByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
         {
+#if NET8_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(normalizedEmail);
+#else
+            if (normalizedEmail is null)
+            {
+                throw new ArgumentNullException(nameof(normalizedEmail));
+            }
+#endif
+
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
             

@@ -54,7 +54,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
             if (user is null)
@@ -121,7 +121,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
             if (user is null)
@@ -151,7 +151,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
             if (user is null)
@@ -188,7 +188,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-#if NET10_0_OR_GREATER
+#if NET8_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
             if (user is null)
