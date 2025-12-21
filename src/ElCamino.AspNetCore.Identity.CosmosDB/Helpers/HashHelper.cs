@@ -2,6 +2,7 @@
 using System;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Azure.Cosmos.Core;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB.Helpers
 {
@@ -13,10 +14,27 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Helpers
             return GetHash(sha, input);
         }
 
+#if NET8_0_OR_GREATER
+        public static string GetHash(SHA256 shaHash, ReadOnlySpan<char> input)
+        {
+            Span<byte> encodedBytes = stackalloc byte[Encoding.UTF8.GetMaxByteCount(input.Length)];
+            int encodedByteCount = Encoding.UTF8.GetBytes(input, encodedBytes);
+
+            Span<byte> hashedBytes = stackalloc byte[SHA256.HashSizeInBytes];
+            int hashedByteCount = SHA256.HashData(encodedBytes.Slice(0, encodedByteCount), hashedBytes);
+
+            return Convert.ToHexString(hashedBytes.Slice(0, hashedByteCount));
+        }
+
+#else
         private static string GetHash(SHA256 shaHash, string input)
         {
+
             // Convert the input string to a byte array and compute the hash. 
-            byte[] data = shaHash.ComputeHash(Encoding.UTF8.GetBytes(input));
+            Span<byte> encodedBytes = stackalloc byte[Encoding.UTF8.GetMaxByteCount(input.Length)];
+            int encodedByteCount = Encoding.UTF8.GetBytes(input, encodedBytes);
+
+            byte[] data = shaHash.ComputeHash(encodedBytes.ToArray());
             Console.WriteLine(string.Format("Key Size before hash: {0} bytes", Encoding.UTF8.GetBytes(input).Length));
 
             // Create a new Stringbuilder to collect the bytes 
@@ -34,5 +52,6 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Helpers
             // Return the hexadecimal string. 
             return sBuilder.ToString();
         }
+#endif
     }
 }
