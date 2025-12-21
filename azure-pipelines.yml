@@ -28,23 +28,6 @@ steps:
   inputs:
     version: 10.0.x
 
-- task: PowerShell@2
-  displayName: 'Install Cosmos DB Emulator'
-  inputs:
-    targetType: 'inline'
-    script: |
-      Write-Host "Installing Cosmos DB Emulator via Chocolatey (as Administrator)..."
-      
-      # Ensure we're running as administrator
-      if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-          Write-Error "This script must be run as Administrator"
-          exit 1
-      }
-      
-      Write-Host "Running with Administrator privileges"
-      choco install azure-cosmosdb-emulator -y --force
-    pwsh: false
-
 - powershell: |
     Write-Host "Starting Cosmos DB Emulator..."
     & "C:\Program Files\Azure Cosmos DB Emulator\CosmosDB.Emulator.exe" /NoUI /NoExplorer /DisableRateLimiting /PartitionCount=100 /Consistency=Session
