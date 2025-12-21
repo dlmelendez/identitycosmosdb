@@ -66,16 +66,22 @@ steps:
     arguments: '-c $(BuildConfiguration) -p:Version=$(BuildVersion)'
 
 - task: DotNetCoreCLI@2
+  displayName: 'dotnet test'
   inputs:
     command: 'test'
     publishTestResults: true
+    testResultsFormat: 'VSTest'
+    testResultsFiles: '**/*.trx'
     projects: '**/**.Tests.csproj'
-    arguments: '--no-build --collect:"XPlat Code Coverage" -c $(BuildConfiguration) -v d'
+    arguments: '--no-build --logger trx --logger "console;verbosity=detailed" --collect:"XPlat Code Coverage" --results-directory $(Agent.TempDirectory)/TestResults -c $(BuildConfiguration)'
 
 - task: PublishCodeCoverageResults@2
   displayName: 'Publish Code Coverage'
   inputs:
-    summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+    codeCoverageTool: 'Cobertura'
+    summaryFileLocation: '$(Agent.TempDirectory)/TestResults/**/coverage.cobertura.xml'
+    pathToSources: '$(System.DefaultWorkingDirectory)'
+    reportDirectory: '$(Agent.TempDirectory)/TestResults/CoverageReport'
 
 - task: CopyFiles@1
   displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
