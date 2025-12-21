@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Description>Azure CosmosDB Provider to support AspNet Identity Core frameworks for .NET.</Description>
-    <Copyright>Copyright © 2025 David Melendez, MIT License</Copyright>
+    <Copyright>Copyright © 2026 David Melendez, MIT License</Copyright>
     <AssemblyTitle>Azure CosmosDB Provider for ASP.NET Identity Core</AssemblyTitle>
     <Authors>David Melendez</Authors>
     <TargetFrameworks>netstandard2.0;net8.0;net10.0;</TargetFrameworks>
@@ -22,7 +22,7 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/dlmelendez/identitycosmosdb.git</RepositoryUrl>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>6.0</Version>
+    <Version>10.0</Version>
     <PackageProjectUrl>https://github.com/dlmelendez/identitycosmosdb</PackageProjectUrl>
     <DebugType>Full</DebugType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
