@@ -55,14 +55,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 #if NET10_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(role);
 #else
-            if (role == null)
+            if (role is null)
             {
                 throw new ArgumentNullException(nameof(role));
             }
 #endif
 
             role = await FindByIdAsync(role.Id, cancellationToken);
-            if (role != null)
+            if (role is not null)
             {
                 return await Task.FromResult(role.Claims.Select(c => new Claim(c.ClaimType, c.ClaimValue)).ToList())
                     .ConfigureAwait(false);
@@ -84,11 +84,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             ArgumentNullException.ThrowIfNull(role);
             ArgumentNullException.ThrowIfNull(claim);
 #else
-            if (role == null)
+            if (role is null)
             {
                 throw new ArgumentNullException(nameof(role));
             }
-            if (claim == null)
+            if (claim is null)
             {
                 throw new ArgumentNullException(nameof(claim));
             }
@@ -130,7 +130,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 #if NET10_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(role);
 #else
-            if (role == null)
+            if (role is null)
             {
                 throw new ArgumentNullException(nameof(role));
             }
@@ -148,7 +148,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 #if NET10_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(role);
 #else
-            if (role == null)
+            if (role is null)
             {
                 throw new ArgumentNullException(nameof(role));
             }
@@ -167,7 +167,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 #if NET10_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(role);
 #else
-            if (role == null)
+            if (role is null)
             {
                 throw new ArgumentNullException(nameof(role));
             }
@@ -274,11 +274,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             ArgumentNullException.ThrowIfNull(role);
             ArgumentNullException.ThrowIfNull(claim);
 #else
-            if (role == null)
+            if (role is null)
             {
                 throw new ArgumentNullException(nameof(role));
             }
-            if (claim == null)
+            if (claim is null)
             {
                 throw new ArgumentNullException(nameof(claim));
             }

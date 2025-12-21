@@ -37,11 +37,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         {
             if (!includeRoles)
             {
-                if (currentUser == null)
+                if (currentUser is null)
                 {
                     lock (objectLock)
                     {
-                        if (currentUser == null)
+                        if (currentUser is null)
                         {
                             var task = CreateUser<ApplicationUser>(includeRoles);
                             task.Wait(TestContext.CancellationToken);
@@ -53,11 +53,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             }
             else
             {
-                if (currentRoleUser == null)
+                if (currentRoleUser is null)
                 {
                     lock (objectLock)
                     {
-                        if (currentRoleUser == null)
+                        if (currentRoleUser is null)
                         {
                             var task = CreateUser<ApplicationUser>(includeRoles);
                             task.Wait(TestContext.CancellationToken);
@@ -747,7 +747,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
             var userRole = await rmanager.FindByNameAsync(roleName);
             IdentityRole role = userRole;
-            if (userRole == null)
+            if (userRole is null)
             {
                 var taskResult = await rmanager.CreateAsync(new IdentityRole(roleName));
                 Assert.IsTrue(taskResult.Succeeded);

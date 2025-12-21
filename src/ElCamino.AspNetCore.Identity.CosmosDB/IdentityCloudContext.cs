@@ -51,7 +51,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             private void InitDatabase()
             {
-                if (_db == null)
+                if (_db is null)
                 {
                     _db = _client.GetDatabase(_databaseId);
                 }
@@ -66,7 +66,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             private void InitCollection()
             {
-                if (IdentityContainer == null)
+                if (IdentityContainer is null)
                 {
                     IdentityContainer = _db.GetContainer(_identityContainerId);
                 }

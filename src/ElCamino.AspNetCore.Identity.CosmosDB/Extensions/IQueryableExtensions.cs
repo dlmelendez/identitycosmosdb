@@ -12,14 +12,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Extensions
         public static Task<TSource> SingleOrDefaultAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> where = null, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (where == null)
+            if (where is null)
                 return Task.FromResult(source.SingleOrDefault());
             return Task.FromResult(source.Where(where).SingleOrDefault());
         }
         public static Task<TSource> FirstOrDefaultAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> where = null, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (where == null)
+            if (where is null)
                 return Task.FromResult(source.FirstOrDefault());
             return Task.FromResult(source.FirstOrDefault(where));
         }
@@ -27,7 +27,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Extensions
         public static Task<List<TSource>> ToListAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> where = null, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (where == null)
+            if (where is null)
             {
                 if (source is List<TSource> list)
                 {

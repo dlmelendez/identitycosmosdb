@@ -62,7 +62,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 #if NET10_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
-            if (user == null)
+            if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
@@ -96,7 +96,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 #if NET10_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(claim);
 #else
-            if (claim == null)
+            if (claim is null)
             {
                 throw new ArgumentNullException(nameof(claim));
             }
@@ -161,7 +161,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 #if NET10_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
-            if (user == null)
+            if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
@@ -397,12 +397,12 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                         yield return q;
                     }
                 }
-            } while (continuationToken != null);
+            } while (continuationToken is not null);
         }
 
         protected internal async Task<Q> ExecuteSqlQueryFirstAsync<Q>(QueryDefinition sqlQuery, QueryRequestOptions queryOptions = null) where Q : class
         {
-            if (queryOptions == null)
+            if (queryOptions is null)
             {
                 queryOptions = Context.QueryOptions;
                 queryOptions.MaxConcurrency = 0; //max
@@ -475,7 +475,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 #if NET10_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
-            if (user == null)
+            if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
@@ -500,7 +500,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 #if NET10_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
-            if (user == null)
+            if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
@@ -554,7 +554,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 #if NET10_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
-            if (user == null)
+            if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
@@ -637,7 +637,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 #if NET10_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
-            if (user == null)
+            if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
@@ -648,10 +648,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             }
             var roleEntity = await Roles.SingleOrDefaultAsync(r => r.NormalizedName == normalizedRoleName, cancellationToken)
                 .ConfigureAwait(false);
-            if (roleEntity != null)
+            if (roleEntity is not null)
             {
                 var userRole = user.Roles.FirstOrDefault(r => r.RoleId.Equals(roleEntity.Id) && r.UserId.Equals(user.Id));
-                if (userRole != null)
+                if (userRole is not null)
                 {
                     user.Roles.Remove(userRole);
                 }
@@ -675,7 +675,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 #if NET10_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
-            if (user == null)
+            if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
@@ -690,7 +690,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             if (!string.IsNullOrWhiteSpace(roleId))
             {
                 var userRole = user.Roles.FirstOrDefault(ur => ur.RoleId.Equals(roleId) && ur.UserId.Equals(user.Id));
-                return userRole != null;
+                return userRole is not null;
             }
             return false;
         }
@@ -721,7 +721,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 #if NET10_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
-            if (user == null)
+            if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
@@ -747,11 +747,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             ArgumentNullException.ThrowIfNull(user);
             ArgumentNullException.ThrowIfNull(claims);
 #else
-            if (user == null)
+            if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
-            if (claims == null)
+            if (claims is null)
             {
                 throw new ArgumentNullException(nameof(claims));
             }
@@ -779,15 +779,15 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             ArgumentNullException.ThrowIfNull(claim);
             ArgumentNullException.ThrowIfNull(newClaim);
 #else
-            if (user == null)
+            if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
-            if (claim == null)
+            if (claim is null)
             {
                 throw new ArgumentNullException(nameof(claim));
             }
-            if (newClaim == null)
+            if (newClaim is null)
             {
                 throw new ArgumentNullException(nameof(newClaim));
             }
@@ -817,11 +817,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             ArgumentNullException.ThrowIfNull(user);
             ArgumentNullException.ThrowIfNull(claims);
 #else
-            if (user == null)
+            if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
-            if (claims == null)
+            if (claims is null)
             {
                 throw new ArgumentNullException(nameof(claims));
             }
@@ -855,11 +855,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             ArgumentNullException.ThrowIfNull(user);
             ArgumentNullException.ThrowIfNull(login);
 #else
-            if (user == null)
+            if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
-            if (login == null)
+            if (login is null)
             {
                 throw new ArgumentNullException(nameof(login));
             }
@@ -884,13 +884,13 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 #if NET10_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
-            if (user == null)
+            if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
             }
 #endif
             var entry = user.Logins.SingleOrDefault(userLogin => userLogin.UserId.Equals(user.Id) && userLogin.LoginProvider == loginProvider && userLogin.ProviderKey == providerKey);
-            if (entry != null)
+            if (entry is not null)
             {
                 user.Logins.Remove(entry);
             }
@@ -912,7 +912,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 #if NET10_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(user);
 #else
-            if (user == null)
+            if (user is null)
             {
                 throw new ArgumentNullException(nameof(user));
             }

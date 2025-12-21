@@ -16,7 +16,7 @@ namespace Microsoft.Extensions.DependencyInjection
 			builder.Services.AddSingleton<IdentityConfiguration>(new Func<IServiceProvider, IdentityConfiguration>(p=> configAction()));
 
             Type contextType = typeof(TContext);
-            Type userStoreType = builder.RoleType != null ?
+            Type userStoreType = builder.RoleType is not null ?
                 typeof(UserStore<,,>).MakeGenericType(builder.UserType, builder.RoleType, contextType)
                 : typeof(UserStore<,>).MakeGenericType(builder.UserType, contextType);
 
@@ -25,7 +25,7 @@ namespace Microsoft.Extensions.DependencyInjection
             builder.Services.AddScoped(
                 typeof(IUserStore<>).MakeGenericType(builder.UserType),
                 userStoreType);
-            if (builder.RoleType != null)
+            if (builder.RoleType is not null)
             {
                 Type roleStoreType = typeof(RoleStore<,>).MakeGenericType(builder.RoleType, contextType);
 
