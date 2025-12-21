@@ -42,7 +42,7 @@ steps:
         $elapsed += $interval
         
         try {
-            $response = Invoke-WebRequest -Uri "https://localhost:8081/_explorer/emulator.pem" -UseBasicParsing -TimeoutSec 5
+            $response = Invoke-WebRequest -Uri "https://localhost:8081/_explorer/index.html" -UseBasicParsing -TimeoutSec 5
             if ($response.StatusCode -eq 200) {
                 Write-Host "Cosmos DB Emulator is ready!"
                 break
