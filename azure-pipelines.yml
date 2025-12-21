@@ -34,35 +34,35 @@ steps:
   displayName: 'Install Cosmos DB Emulator'
 
 - powershell: |
-  Write-Host "Starting Cosmos DB Emulator..."
-  & "C:\Program Files\Azure Cosmos DB Emulator\CosmosDB.Emulator.exe" /NoUI /NoExplorer /DisableRateLimiting /PartitionCount=100 /Consistency=Session
+    Write-Host "Starting Cosmos DB Emulator..."
+    & "C:\Program Files\Azure Cosmos DB Emulator\CosmosDB.Emulator.exe" /NoUI /NoExplorer /DisableRateLimiting /PartitionCount=100 /Consistency=Session
     
-  # Wait for emulator to start
-  $timeout = 300 # 5 minutes
-  $elapsed = 0
-  $interval = 10
+    # Wait for emulator to start
+    $timeout = 300 # 5 minutes
+    $elapsed = 0
+    $interval = 10
     
-  do {
-      Start-Sleep -Seconds $interval
-      $elapsed += $interval
+    do {
+        Start-Sleep -Seconds $interval
+        $elapsed += $interval
         
-      try {
-          $response = Invoke-WebRequest -Uri "https://localhost:8081/_explorer/emulator.pem" -UseBasicParsing -TimeoutSec 5
-          if ($response.StatusCode -eq 200) {
-              Write-Host "Cosmos DB Emulator is ready!"
-              break
-          }
-      }
-      catch {
-          Write-Host "Waiting for Cosmos DB Emulator to start... ($elapsed/$timeout seconds)"
-      }
-  } while ($elapsed -lt $timeout)
+        try {
+            $response = Invoke-WebRequest -Uri "https://localhost:8081/_explorer/emulator.pem" -UseBasicParsing -TimeoutSec 5
+            if ($response.StatusCode -eq 200) {
+                Write-Host "Cosmos DB Emulator is ready!"
+                break
+            }
+        }
+        catch {
+            Write-Host "Waiting for Cosmos DB Emulator to start... ($elapsed/$timeout seconds)"
+        }
+    } while ($elapsed -lt $timeout)
     
-  if ($elapsed -ge $timeout) {
-      Write-Error "Cosmos DB Emulator failed to start within $timeout seconds"
-      exit 1
-  }
-displayName: 'Start Cosmos DB Emulator'
+    if ($elapsed -ge $timeout) {
+        Write-Error "Cosmos DB Emulator failed to start within $timeout seconds"
+        exit 1
+    }
+  displayName: 'Start Cosmos DB Emulator'
 
 - task: DotNetCoreCLI@2
   displayName: 'dotnet build'
