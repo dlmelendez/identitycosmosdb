@@ -3,6 +3,6 @@
 #if DEBUG
 [assembly: Parallelize(Scope = ExecutionScope.MethodLevel)]
 #else
-// Parallel execution disabled for Release builds
-[assembly: Parallelize(Scope = ExecutionScope.ClassLevel, Workers = 1)]
+// Parallel execution completely disabled for Release builds
+[assembly: DoNotParallelize]
 #endif
