@@ -110,7 +110,7 @@ steps:
           `$dbHeaders['Content-Type'] = 'application/json'
           
           try {
-              `$dbResponse = Invoke-RestMethod -Uri `$createDbUri -Method POST -Headers `$dbHeaders -Body `$dbBody -SkipCertificateCheck
+              `$dbResponse = Invoke-RestMethod -Uri `$createDbUri -Method POST -Headers `$dbHeaders -Body `$dbBody 
               Write-Host "Database '$databaseName' created successfully"
           }
           catch {
@@ -143,7 +143,7 @@ steps:
           `$containerHeaders['Content-Type'] = 'application/json'
           
           try {
-              `$containerResponse = Invoke-RestMethod -Uri `$createContainerUri -Method POST -Headers `$containerHeaders -Body `$containerBody -SkipCertificateCheck
+              `$containerResponse = Invoke-RestMethod -Uri `$createContainerUri -Method POST -Headers `$containerHeaders -Body `$containerBody 
               Write-Host "Container '$containerName' created successfully with autoscale (400-4000 RU/s)"
           }
           catch {
