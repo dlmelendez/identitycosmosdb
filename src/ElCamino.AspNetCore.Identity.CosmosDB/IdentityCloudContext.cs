@@ -87,27 +87,34 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                     body = await sr.ReadToEndAsync().ConfigureAwait(false);
                 }
                 string strId = "getUserById_v1";
+                if (await StoredProcedureExistsAsync(IdentityContainer, strId).ConfigureAwait(false))
+                {
+                    _ = await IdentityContainer.Scripts.ReplaceStoredProcedureAsync(
+                     new StoredProcedureProperties(strId, body)).ConfigureAwait(false);
+                }
+                else
+                {
+                    _ = await IdentityContainer.Scripts.CreateStoredProcedureAsync(
+                        new StoredProcedureProperties(strId, body)).ConfigureAwait(false);
+                }
 
-                await TryDeleteStoredProcedure(_identityContainer, strId).ConfigureAwait(false);
-                _ = await _identityContainer.Scripts.CreateStoredProcedureAsync(
-                    new StoredProcedureProperties(strId, body)).ConfigureAwait(false);
-                
+
             }
 
-            private async Task TryDeleteStoredProcedure(Container container, string sprocId)
+            private static async Task<bool> StoredProcedureExistsAsync(Container container, string sprocId)
             {
                 Scripts cosmosScripts = container.Scripts;
-
+                StoredProcedureResponse sproc;
                 try
                 {
-                    StoredProcedureResponse sproc = await cosmosScripts.ReadStoredProcedureAsync(sprocId).ConfigureAwait(false);
-                    await cosmosScripts.DeleteStoredProcedureAsync(sprocId).ConfigureAwait(false);
+                    sproc = await cosmosScripts.ReadStoredProcedureAsync(sprocId).ConfigureAwait(false);
+                    return true;
                 }
-                catch (CosmosException ex) 
+                catch (CosmosException ex)
                     when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    //Nothing to delete
-                }
+                    return false;
+                }                
             }
 
             ~InternalContext()
