@@ -21,7 +21,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
-            var user = await CreateTestUser<ApplicationUser>(includeRoles);
+            var user = await CreateTestUserAsync<ApplicationUser>(includeRoles);
             var taskUser = await manager.GetAccessFailedCountAsync(user);
             Assert.AreEqual<int>(user.AccessFailedCount, taskUser);
 
@@ -77,7 +77,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         {
             _ = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
-            var user = await CreateTestUser<ApplicationUser>(false, false);
+            var user = await CreateTestUserAsync<ApplicationUser>(false, false);
             string strNewEmail = string.Format("{0}@hotmail.com", Guid.NewGuid().ToString("N"));
             await UserStoreTests.SetValidateEmail(manager, user, strNewEmail);
 
@@ -93,7 +93,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
-            var user = await CurrentUser(includeRoles);
+            var user = await CurrentUserAsync(includeRoles);
 
             string strNewEmail = string.Format("{0}@gmail.com", Guid.NewGuid().ToString("N"));
             await UserStoreTests.SetValidateEmail(manager, user, strNewEmail);
@@ -113,7 +113,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
-            var user = await CreateTestUser<ApplicationUser>(includeRoles);
+            var user = await CreateTestUserAsync<ApplicationUser>(includeRoles);
 
 
             string token = await manager.GenerateEmailConfirmationTokenAsync(user);
@@ -140,7 +140,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
-            var user = await CurrentUser(includeRoles);
+            var user = await CurrentUserAsync(includeRoles);
 
             var taskLockoutSet = await manager.SetLockoutEnabledAsync(user, true);
             Assert.IsTrue(taskLockoutSet.Succeeded, string.Concat(taskLockoutSet.Errors));
@@ -186,7 +186,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
-            var user = await CurrentUser(includeRoles);
+            var user = await CurrentUserAsync(includeRoles);
 
             string strNewPhoneNumber = "542-887-3434";
 
@@ -211,7 +211,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
-            var user = await CreateTestUser<ApplicationUser>(includeRoles);
+            var user = await CreateTestUserAsync<ApplicationUser>(includeRoles);
             string strNewPhoneNumber = "425-555-1111";
 
             string token = await manager.GenerateChangePhoneNumberTokenAsync(user, strNewPhoneNumber);
@@ -241,7 +241,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
-            var user = await CurrentUser(includeRoles);
+            var user = await CurrentUserAsync(includeRoles);
 
             bool twoFactorEnabled = true;
 
@@ -264,7 +264,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
-            var user = await CurrentUser(includeRoles);
+            var user = await CurrentUserAsync(includeRoles);
             string passwordPlain = Guid.NewGuid().ToString("N");
 
             string passwordHash = new PasswordHasher<ApplicationUser>().HashPassword(user, passwordPlain);
@@ -305,7 +305,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Console.WriteLine("");
 
             string email = "A" + Guid.NewGuid().ToString() + "@gmail.com";
-            await CreateTestUser<ApplicationUser>(includeRoles, true, true, email);
+            await CreateTestUserAsync<ApplicationUser>(includeRoles, true, true, email);
 
             DateTime start3 = DateTime.UtcNow;
             var list3 = manager.Users.Where(w=> w.Email == email).Select(s => s.Email).ToList();
@@ -382,7 +382,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         {
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles); 
-            var user = await CreateTestUser<ApplicationUser>(includeRoles);
+            var user = await CreateTestUserAsync<ApplicationUser>(includeRoles);
 
             var taskUser = await manager.GetSecurityStampAsync(user);
 
