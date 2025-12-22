@@ -72,8 +72,9 @@ steps:
     publishTestResults: true
     testResultsFormat: 'VSTest'
     testResultsFiles: '**/*.trx'
+    resultsFolder: '$(Agent.TempDirectory)\TestResults'
     projects: '**/**.Tests.csproj'
-    arguments: '--no-build --logger trx --logger "console;verbosity=detailed" --collect:"XPlat Code Coverage" --results-directory "$(Agent.TempDirectory)\TestResults" -c $(BuildConfiguration)'
+    arguments: '--no-build --logger trx --logger "console;verbosity=detailed" --collect:"XPlat Code Coverage" -c $(BuildConfiguration)'
 
 - task: PublishCodeCoverageResults@2
   displayName: 'Publish Code Coverage'
