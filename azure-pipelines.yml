@@ -65,6 +65,109 @@ steps:
     projects: '**/ElCamino.AspNetCore.Identity.CosmosDB.sln'
     arguments: '-c $(BuildConfiguration) -p:Version=$(BuildVersion)'
 
+- task: PowerShell@2
+    displayName: 'Setup Cosmos DB Database and Container'
+    inputs:
+      targetType: 'inline'
+      script: |
+        Write-Host "Setting up Cosmos DB database and container..."
+      
+        # Cosmos DB Emulator connection details
+        $cosmosEndpoint = "https://localhost:8081"
+        $cosmosKey = "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="
+        $databaseName = "Id2"
+        $containerName = "id"
+        $partitionKey = "/partitionKey"
+      
+        # Create PowerShell script to setup database
+        $setupScript = @"
+        # Install Azure PowerShell module if not present
+        if (-not (Get-Module -ListAvailable -Name Az.CosmosDB)) {
+            Write-Host "Installing Az.CosmosDB module..."
+            Install-Module -Name Az.CosmosDB -Force -Scope CurrentUser -AllowClobber
+        }
+      
+        # Import required modules
+        Import-Module Az.CosmosDB -Force
+      
+        try {
+            # Test connection to emulator
+            Write-Host "Testing connection to Cosmos DB Emulator..."
+            `$headers = @{
+                'authorization' = "type%3dmaster%26ver%3d1.0%26sig%3d" + [System.Web.HttpUtility]::UrlEncode("$cosmosKey")
+                'x-ms-date' = [DateTime]::UtcNow.ToString("r")
+                'x-ms-version' = '2018-12-31'
+            }
+          
+            # Create database using REST API
+            Write-Host "Creating database '$databaseName'..."
+            `$createDbUri = "$cosmosEndpoint/dbs"
+            `$dbBody = @{
+                id = "$databaseName"
+            } | ConvertTo-Json
+          
+            `$dbHeaders = `$headers.Clone()
+            `$dbHeaders['Content-Type'] = 'application/json'
+          
+            try {
+                `$dbResponse = Invoke-RestMethod -Uri `$createDbUri -Method POST -Headers `$dbHeaders -Body `$dbBody -SkipCertificateCheck
+                Write-Host "Database '$databaseName' created successfully"
+            }
+            catch {
+                if (`$_.Exception.Response.StatusCode -eq 409) {
+                    Write-Host "Database '$databaseName' already exists"
+                }
+                else {
+                    throw `$_
+                }
+            }
+          
+            # Create container using REST API
+            Write-Host "Creating container '$containerName' with partition key '$partitionKey'..."
+            `$createContainerUri = "$cosmosEndpoint/dbs/$databaseName/colls"
+            `$containerBody = @{
+                id = "$containerName"
+                partitionKey = @{
+                    paths = @("$partitionKey")
+                    kind = "Hash"
+                }
+                throughput = @{
+                    throughput = 400
+                    autoscaleSettings = @{
+                        maxThroughput = 4000
+                    }
+                }
+            } | ConvertTo-Json -Depth 10
+          
+            `$containerHeaders = `$headers.Clone()
+            `$containerHeaders['Content-Type'] = 'application/json'
+          
+            try {
+                `$containerResponse = Invoke-RestMethod -Uri `$createContainerUri -Method POST -Headers `$containerHeaders -Body `$containerBody -SkipCertificateCheck
+                Write-Host "Container '$containerName' created successfully with autoscale (400-4000 RU/s)"
+            }
+            catch {
+                if (`$_.Exception.Response.StatusCode -eq 409) {
+                    Write-Host "Container '$containerName' already exists"
+                }
+                else {
+                    throw `$_
+                }
+            }
+          
+            Write-Host "Cosmos DB setup completed successfully!"
+        }
+        catch {
+            Write-Error "Failed to setup Cosmos DB: `$(`$_.Exception.Message)"
+            exit 1
+        }
+  "@
+      
+        # Execute the setup script
+        Invoke-Expression $setupScript
+      pwsh: false
+
+
 - task: DotNetCoreCLI@2
   displayName: 'dotnet test'
   inputs:
