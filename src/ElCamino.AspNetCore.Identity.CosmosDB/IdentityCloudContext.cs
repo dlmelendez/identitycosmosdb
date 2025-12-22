@@ -87,8 +87,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                     body = await sr.ReadToEndAsync().ConfigureAwait(false);
                 }
                 string strId = "getUserById_v1";
-                
-                TryDeleteStoredProcedure(_identityContainer, strId).Wait();
+
+                await TryDeleteStoredProcedure(_identityContainer, strId).ConfigureAwait(false);
                 _ = await _identityContainer.Scripts.CreateStoredProcedureAsync(
                     new StoredProcedureProperties(strId, body)).ConfigureAwait(false);
                 

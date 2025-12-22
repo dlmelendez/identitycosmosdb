@@ -4,6 +4,7 @@ using System;
 using Microsoft.AspNetCore.Identity;
 using ElCamino.AspNetCore.Identity.CosmosDB.Model;
 using ElCamino.AspNetCore.Identity.CosmosDB;
+using System.Threading.Tasks;
 
 #pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace Microsoft.Extensions.DependencyInjection
@@ -22,7 +23,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 typeof(UserStore<,,>).MakeGenericType(builder.UserType, builder.RoleType, contextType)
                 : typeof(UserStore<,>).MakeGenericType(builder.UserType, contextType);
 
-            builder.Services.AddScoped(contextType, contextType);
+            builder.Services.AddSingleton(contextType, contextType);
 
             builder.Services.AddScoped(
                 typeof(IUserStore<>).MakeGenericType(builder.UserType),

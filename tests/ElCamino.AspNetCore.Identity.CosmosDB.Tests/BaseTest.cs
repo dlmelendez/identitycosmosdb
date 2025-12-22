@@ -48,8 +48,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
         static BaseTest()
         {
-            Provider = SetProvider(false);
-            RoleProvider = SetProvider(true);
+            Provider = SetProvider(false, createDb: true);
+            RoleProvider = SetProvider(true, createDb: false);
         }
 
         private static ServiceProvider GetProvider(bool includeRoles)
@@ -57,7 +57,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             return includeRoles ? RoleProvider : Provider;
         }
             
-        private static ServiceProvider SetProvider(bool includeRoles)
+        private static ServiceProvider SetProvider(bool includeRoles, bool createDb = false)
         {
             IdentityBuilder builder = new IdentityBuilder(typeof(TUser), typeof(TRole), new ServiceCollection());
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
@@ -80,10 +80,18 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             {
                 builder.Services.AddIdentityCore<TUser>(options);
             }
-            
-            builder.AddCosmosDBStores<TContext>(() => GetConfig())
-                .CreateCosmosDBIfNotExists<TContext>()
-                .AddDefaultTokenProviders();
+
+            if (createDb)
+            {
+                builder.AddCosmosDBStores<TContext>(() => GetConfig())
+                    .CreateCosmosDBIfNotExists<TContext>()
+                    .AddDefaultTokenProviders();
+            }
+            else
+            {
+                builder.AddCosmosDBStores<TContext>(() => GetConfig())
+                    .AddDefaultTokenProviders();
+            }
             builder.Services.AddDataProtection();
             builder.Services.AddLogging();
 
