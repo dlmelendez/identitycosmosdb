@@ -22,12 +22,6 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
         public TestContext TestContext { get; set; }
 
-        [TestInitialize]
-        public void Initialize()
-        {
-        }
-
-
         private static Claim GenRoleClaim()
         {
             return new Claim(Constants.AccountClaimTypes.AccountTestUserClaim, Guid.NewGuid().ToString());

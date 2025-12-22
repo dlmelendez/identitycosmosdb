@@ -1,12 +1,12 @@
 ﻿// MIT License Copyright (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using ElCamino.AspNetCore.Identity.CosmosDB.Model;
-using System.Diagnostics;
-using System.Reflection;
-using System.IO;
-using System.Collections.Concurrent;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Scripts;
 
@@ -39,14 +39,14 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             public async Task CreateIfNotExistsAsync()
             {
-                await CreateDatabaseAsync().ConfigureAwait(false);
-                await CreateContainerAsync().ConfigureAwait(false);
-                await CreateStoredProcsAsync().ConfigureAwait(false);
+                await CreateDatabaseAsync();
+                await CreateContainerAsync();
+                await CreateStoredProcsAsync();
             }
 
             private async Task CreateDatabaseAsync()
             {
-                _db = await _client.CreateDatabaseIfNotExistsAsync(_databaseId).ConfigureAwait(false);
+                _db = await _client.CreateDatabaseIfNotExistsAsync(_databaseId);
             }
 
             private void InitDatabase()
@@ -59,9 +59,16 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             private async Task CreateContainerAsync()
             {
-                var containerResponse = await _db.CreateContainerIfNotExistsAsync(new ContainerProperties(_identityContainerId, "/partitionKey"))
-                    .ConfigureAwait(false);
-                IdentityContainer = containerResponse.Container;
+                try
+                {
+                    var containerResponse = await _db.CreateContainerIfNotExistsAsync(new ContainerProperties(_identityContainerId, "/partitionKey"));
+                    IdentityContainer = containerResponse.Container;
+                }
+                catch (CosmosException ex)
+                    when (ex.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    // Ignore conflicts on container creation
+                }
             }
 
             private void InitCollection()
@@ -74,7 +81,15 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             private async Task CreateStoredProcsAsync()
             {
-                await CreateSprocGetUserByIdAsync().ConfigureAwait(false);
+                try
+                {
+                    await CreateSprocGetUserByIdAsync();
+                }
+                catch(CosmosException ex)
+                    when (ex.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    // Ignore conflicts on sproc creation
+                }
             }
 
             private async Task CreateSprocGetUserByIdAsync()
@@ -84,18 +99,18 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 using (StreamReader sr = new StreamReader(typeof(IdentityCloudContext).GetTypeInfo().Assembly.GetManifestResourceStream(
                     "ElCamino.AspNetCore.Identity.CosmosDB.StoredProcs.getUserById_sproc.js"), Encoding.UTF8))
                 {
-                    body = await sr.ReadToEndAsync().ConfigureAwait(false);
+                    body = await sr.ReadToEndAsync();
                 }
                 string strId = "getUserById_v1";
-                if (await StoredProcedureExistsAsync(IdentityContainer, strId).ConfigureAwait(false))
+                if (await StoredProcedureExistsAsync(IdentityContainer, strId))
                 {
                     _ = await IdentityContainer.Scripts.ReplaceStoredProcedureAsync(
-                     new StoredProcedureProperties(strId, body)).ConfigureAwait(false);
+                     new StoredProcedureProperties(strId, body));
                 }
                 else
                 {
                     _ = await IdentityContainer.Scripts.CreateStoredProcedureAsync(
-                        new StoredProcedureProperties(strId, body)).ConfigureAwait(false);
+                        new StoredProcedureProperties(strId, body));
                 }
 
 
@@ -107,7 +122,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 StoredProcedureResponse sproc;
                 try
                 {
-                    sproc = await cosmosScripts.ReadStoredProcedureAsync(sprocId).ConfigureAwait(false);
+                    sproc = await cosmosScripts.ReadStoredProcedureAsync(sprocId);
                     return true;
                 }
                 catch (CosmosException ex)
