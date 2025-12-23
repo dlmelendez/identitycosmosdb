@@ -70,7 +70,6 @@ steps:
   inputs:
     command: 'test'
     publishTestResults: true
-    resultsFolder: '$(Agent.TempDirectory)\TestResults'
     projects: '**/**.Tests.csproj'
     arguments: '--no-build --collect:"XPlat Code Coverage" -c $(BuildConfiguration) -v d'
 
@@ -78,9 +77,7 @@ steps:
   displayName: 'Publish Code Coverage'
   inputs:
     codeCoverageTool: 'Cobertura'
-    summaryFileLocation: '$(Agent.TempDirectory)/TestResults/**/coverage.cobertura.xml'
-    pathToSources: '$(System.DefaultWorkingDirectory)'
-    reportDirectory: '$(Agent.TempDirectory)/TestResults/CoverageReport'
+    summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
 
 - task: CopyFiles@1
   displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
