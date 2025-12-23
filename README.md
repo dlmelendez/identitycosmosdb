@@ -6,3 +6,4 @@ This project is an open source high performance plugin to ASP.NET Core Identity 
 [![NuGet Version](https://img.shields.io/nuget/v/ElCamino.AspNetCore.Identity.CosmosDB)](https://www.nuget.org/packages/ElCamino.AspNetCore.Identity.CosmosDB/)
 
 Project site at https://elcamino.cloud/projects/docs/identitycosmosdb/.
+
