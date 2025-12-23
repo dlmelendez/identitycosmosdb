@@ -134,6 +134,10 @@ csharp_preserve_single_line_blocks = true
 
 # IDE0007: Use implicit type
 dotnet_diagnostic.IDE0007.severity = none
+
+# NU5119: File appears in both 'lib' and 'ref' folders
+dotnet_diagnostic.NU5119.severity = none
+
 csharp_using_directive_placement = outside_namespace:silent
 csharp_prefer_simple_using_statement = true:suggestion
 csharp_style_namespace_declarations = block_scoped:silent
