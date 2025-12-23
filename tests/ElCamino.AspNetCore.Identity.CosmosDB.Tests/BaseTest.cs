@@ -1,23 +1,19 @@
-﻿// MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
+﻿// MIT License Copyright (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 
 using System;
-using ElCamino.AspNetCore.Identity.CosmosDB;
 using ElCamino.AspNetCore.Identity.CosmosDB.Model;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-using ElCamino.AspNetCore.Identity.CosmosDB.Tests.ModelTests;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.Json;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.Azure.Cosmos;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 {
     public partial class BaseTest<TUser, TRole, TContext> : IDisposable
-        where TUser : Model.IdentityUser, new()
-        where TRole : Model.IdentityRole, new()
+        where TUser : Model.IdentityUser<string, Model.IdentityUserClaim<string>, Model.IdentityUserRole<string>, Model.IdentityUserLogin<string>>, new()
+        where TRole : Model.IdentityRole<string>, new()
         where TContext : IdentityCloudContext
     {
 
@@ -43,29 +39,30 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
         #endregion
 
-        protected static IServiceProvider Provider;
-        protected static IServiceProvider RoleProvider;
+        protected static ServiceProvider Provider { get; private set; }
+        protected static ServiceProvider RoleProvider { get; private set; }
 
         static BaseTest()
         {
-            Provider = SetProvider(false);
-            RoleProvider = SetProvider(true);
+            Provider = SetProvider(false, createDb: true);
+            RoleProvider = SetProvider(true, createDb: false);
         }
 
-        private static IServiceProvider GetProvider(bool includeRoles)
+        private static ServiceProvider GetProvider(bool includeRoles)
         {
             return includeRoles ? RoleProvider : Provider;
         }
             
-        private static IServiceProvider SetProvider(bool includeRoles)
+        private static ServiceProvider SetProvider(bool includeRoles, bool createDb = false)
         {
             IdentityBuilder builder = new IdentityBuilder(typeof(TUser), typeof(TRole), new ServiceCollection());
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             // Add Identity services to the services container.
-            void options(IdentityOptions config)
+            static void options(IdentityOptions config)
             {
                 config.Lockout = new LockoutOptions() { MaxFailedAccessAttempts = 2 };
                 config.Password.RequireDigit = false;
@@ -83,10 +80,18 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             {
                 builder.Services.AddIdentityCore<TUser>(options);
             }
-            
-            builder.AddCosmosDBStores<TContext>(() => GetConfig())
-                .CreateCosmosDBIfNotExists<TContext>()
-                .AddDefaultTokenProviders();
+
+            if (createDb)
+            {
+                builder.AddCosmosDBStores<TContext>(() => GetConfig())
+                    .CreateCosmosDBIfNotExists<TContext>()
+                    .AddDefaultTokenProviders();
+            }
+            else
+            {
+                builder.AddCosmosDBStores<TContext>(() => GetConfig())
+                    .AddDefaultTokenProviders();
+            }
             builder.Services.AddDataProtection();
             builder.Services.AddLogging();
 
@@ -119,7 +124,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             return idconfig;
         }
 
-        public IdentityCloudContext GetContext() => new IdentityCloudContext(GetConfig());
+        public IdentityCloudContext GetContext() => new(GetConfig());
 
         public RoleStore<TRole, TContext> CreateRoleStore(bool includeRoles)
         {
@@ -192,7 +197,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             where A : Exception 
             where I : Exception
         {
-            var ex = Assert.ThrowsException<A>(action).InnerException;
+            var ex = Assert.Throws<A>(action).InnerException;
             Assert.IsTrue(ex is I, string.Format("Exception is not correct type: {0}", ex.GetType().Name));
         }
 

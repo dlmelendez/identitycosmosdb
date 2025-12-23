@@ -1,50 +1,28 @@
-﻿// MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
+﻿// MIT License Copyright (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using ElCamino.AspNetCore.Identity.CosmosDB;
-using Microsoft.AspNetCore.Identity;
-using ElCamino.AspNetCore.Identity.CosmosDB.Model;
-using Newtonsoft.Json;
-using System.Diagnostics;
 using System.Linq;
-using System.Threading;
-using ElCamino.AspNetCore.Identity.CosmosDB.Tests.ModelTests;
 using System.Security.Claims;
-using IdentityRole = ElCamino.AspNetCore.Identity.CosmosDB.Model.IdentityRole;
-using IdentityUser = ElCamino.AspNetCore.Identity.CosmosDB.Model.IdentityUser;
-using ElCamino.AspNetCore.Identity.CosmosDB.Helpers;
-using Microsoft.Azure.Cosmos;
+using System.Text.Json;
 using System.Threading.Tasks;
+using ElCamino.AspNetCore.Identity.CosmosDB.Tests.ModelTests;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Azure.Cosmos;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using IdentityRole = ElCamino.AspNetCore.Identity.CosmosDB.Model.IdentityRole;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 {
     [TestClass]
     public class RoleStoreTests : BaseTest<ApplicationUser, IdentityRole, IdentityCloudContext>
     {
-        private TestContext testContextInstance;
-        /// <summary>
-        ///Gets or sets the test context which provides
-        ///information about and functionality for the current test run.
-        ///</summary>
-        public TestContext TestContext
+        private readonly JsonSerializerOptions JsonOptions = new()
         {
-            get
-            {
-                return testContextInstance;
-            }
-            set
-            {
-                testContextInstance = value;
-            }
-        }
+            WriteIndented = true
+        };
 
-        [TestInitialize]
-        public void Initialize()
-        {
-        }
+        public TestContext TestContext { get; set; }
 
-
-        private Claim GenRoleClaim()
+        private static Claim GenRoleClaim()
         {
             return new Claim(Constants.AccountClaimTypes.AccountTestUserClaim, Guid.NewGuid().ToString());
         }
@@ -58,11 +36,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Console.WriteLine($"RoleId: {roleNew}");
             var role = new IdentityRole(roleNew);
             var start = DateTime.UtcNow;
-            var createTask = await manager.CreateAsync(role);
+            _ = await manager.CreateAsync(role);
 
             Console.WriteLine("CreateRoleAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
-            Claim c1 = GenRoleClaim();
-            Claim c2 = GenRoleClaim();
+            Claim c1 = RoleStoreTests.GenRoleClaim();
+            Claim c2 = RoleStoreTests.GenRoleClaim();
 
             await AddRoleClaimHelper(role, c1);
             await AddRoleClaimHelper(role, c2);
@@ -75,16 +53,16 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("RoleStore.Role")]
         public async Task AddRoleClaim()
         {
-            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore(true);
+            _ = CreateRoleStore(true);
             RoleManager<IdentityRole> manager = CreateRoleManager(true);
             string roleNew = string.Format("TestRole_{0}", Guid.NewGuid());
             var role = new IdentityRole(roleNew);
             var start = DateTime.UtcNow;
-            var createTask = await manager.CreateAsync(role);
+            _ = await manager.CreateAsync(role);
 
             Console.WriteLine("CreateRoleAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
 
-            await AddRoleClaimHelper(role, GenRoleClaim());
+            await AddRoleClaimHelper(role, RoleStoreTests.GenRoleClaim());
 
             role = await manager.FindByIdAsync(role.Id);
             WriteLineObject(role);
@@ -122,7 +100,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
                 Name = "SpiderMonkey"
             };
             var docResult = await context.IdentityContainer.CreateItemAsync(
-                doc, new PartitionKey(doc.PartitionKey), context.RequestOptions);
+                doc, new PartitionKey(doc.PartitionKey), context.RequestOptions, TestContext.CancellationToken);
             Console.WriteLine(docResult.Resource.ToString());
 
             var fo = context.QueryOptions;
@@ -142,18 +120,18 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         {
             RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore(true);
             RoleManager<IdentityRole> manager = CreateRoleManager(true);
-            var role = await CreateRoleHelper(manager);
+            var role = await RoleStoreTests.CreateRoleHelper(manager);
             WriteLineObject<IdentityRole>(role);
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.CreateAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.CreateAsync(null, TestContext.CancellationToken));
               
         }
 
-        private async Task<IdentityRole> CreateRoleHelper(RoleManager<IdentityRole> manager)
+        private static async Task<IdentityRole> CreateRoleHelper(RoleManager<IdentityRole> manager)
         {
             string roleNew = string.Format("TestRole_{0}", Guid.NewGuid());
             var role = new IdentityRole(roleNew);
-            var createTask = await manager.CreateAsync(role);
+            _ = await manager.CreateAsync(role);
             return role;
         }
 
@@ -164,7 +142,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             RoleStore<IdentityRole, IdentityCloudContext> store = new RoleStore<IdentityRole, IdentityCloudContext>(new IdentityCloudContext(GetConfig()), new IdentityErrorDescriber());
             store.Dispose();
 
-            await Assert.ThrowsExceptionAsync<ObjectDisposedException>(async() => await store.DeleteAsync(new IdentityRole()));
+            await Assert.ThrowsAsync<ObjectDisposedException>(async() => await store.DeleteAsync(new IdentityRole(), TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -186,22 +164,24 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Assert.IsNotNull(findTask, "Find Role Result is null");
             Assert.AreNotEqual<string>(roleNew, findTask.Name, "Name not updated.");
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.UpdateAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.UpdateAsync(null, TestContext.CancellationToken));
         }
 
         [TestMethod]
         [TestCategory("RoleStore.Role")]
         public async Task UpdateRole2()
         {
-            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore(true);
+            _ = CreateRoleStore(true);
             RoleManager<IdentityRole> manager = CreateRoleManager(true);
             string roleNew = string.Format("{0}_TestRole", Guid.NewGuid());
 
             var role = new IdentityRole(roleNew);
-            var createTask = await manager.CreateAsync(role);
+            var result = await manager.CreateAsync(role);
+            Assert.AreEqual(IdentityResult.Success, result);
 
-            role.Name = role.Name + Guid.NewGuid();
-            var updateTask = await manager.UpdateAsync(role);
+            role.Name += Guid.NewGuid();
+            result = await manager.UpdateAsync(role);
+            Assert.AreEqual(IdentityResult.Success, result);
 
             var findTask = await manager.FindByIdAsync(role.Id);
             Assert.IsNotNull(findTask, "Find Role Result is null");
@@ -225,7 +205,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var findTask = await manager.FindByIdAsync(role.Id);
             Assert.IsNull(findTask, "Role not deleted ");
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.DeleteAsync(null));               
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.DeleteAsync(null, TestContext.CancellationToken));               
         }
 
 
@@ -233,10 +213,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [TestCategory("RoleStore.Role")]
         public async Task FindRoleById()
         {
-            RoleStore<IdentityRole, IdentityCloudContext> store = CreateRoleStore(true);
+            _ = CreateRoleStore(true);
             RoleManager<IdentityRole> manager = CreateRoleManager(true);
             DateTime start = DateTime.UtcNow;
-            var role = await CreateRoleHelper(manager);
+            var role = await RoleStoreTests.CreateRoleHelper(manager);
             var findTask = await manager.FindByIdAsync(role.Id);
             Console.WriteLine("FindByIdAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
 
@@ -252,7 +232,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         {
             RoleManager<IdentityRole> manager = CreateRoleManager(true);
 
-            var role = await CreateRoleHelper(manager);
+            var role = await RoleStoreTests.CreateRoleHelper(manager);
             DateTime start = DateTime.UtcNow;
             var findTask = await manager.FindByNameAsync(role.Name);
             Console.WriteLine("FindByNameAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
@@ -261,10 +241,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Assert.AreEqual<string>(role.Name, findTask.Name, "Role names don't match.");
         }
 
-        private void WriteLineObject<t>(t obj) where t : class
+        private void WriteLineObject<T>(T obj) where T : class
         {
-            Console.WriteLine(typeof(t).Name);
-            string strLine = obj == null ? "Null" : Newtonsoft.Json.JsonConvert.SerializeObject(obj, Newtonsoft.Json.Formatting.Indented);
+            Console.WriteLine(typeof(T).Name);
+            string strLine = obj is null ? "Null" : JsonSerializer.Serialize(obj, JsonOptions);
             Console.WriteLine("{0}", strLine);
         }
 

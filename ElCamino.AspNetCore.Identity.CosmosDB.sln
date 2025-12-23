@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29503.13
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11312.210
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{76E6FCF1-1099-40C3-BAEB-AA6345DE180A}"
 	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
 		.gitignore = .gitignore
+		azure-pipelines.yml = azure-pipelines.yml
 		LICENSE = LICENSE
 		README.md = README.md
 	EndProjectSection
@@ -13,6 +15,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElCamino.AspNetCore.Identity.CosmosDB", "src\ElCamino.AspNetCore.Identity.CosmosDB\ElCamino.AspNetCore.Identity.CosmosDB.csproj", "{311A8C71-9E5D-434D-BE8A-27ABBB820F5C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElCamino.AspNetCore.Identity.CosmosDB.Tests", "tests\ElCamino.AspNetCore.Identity.CosmosDB.Tests\ElCamino.AspNetCore.Identity.CosmosDB.Tests.csproj", "{0279C5B2-8E9B-4D50-9F89-E35F15FFB3A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElCamino.AspNetCore.Identity.CosmosDB.Templates", "templates\ElCamino.AspNetCore.Identity.CosmosDB.Templates.csproj", "{BEE36BFD-558C-FDFE-FEB4-5081C4A55EA9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -48,6 +52,18 @@ Global
 		{0279C5B2-8E9B-4D50-9F89-E35F15FFB3A0}.Release|x64.Build.0 = Release|Any CPU
 		{0279C5B2-8E9B-4D50-9F89-E35F15FFB3A0}.Release|x86.ActiveCfg = Release|Any CPU
 		{0279C5B2-8E9B-4D50-9F89-E35F15FFB3A0}.Release|x86.Build.0 = Release|Any CPU
+		{BEE36BFD-558C-FDFE-FEB4-5081C4A55EA9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BEE36BFD-558C-FDFE-FEB4-5081C4A55EA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BEE36BFD-558C-FDFE-FEB4-5081C4A55EA9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BEE36BFD-558C-FDFE-FEB4-5081C4A55EA9}.Debug|x64.Build.0 = Debug|Any CPU
+		{BEE36BFD-558C-FDFE-FEB4-5081C4A55EA9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BEE36BFD-558C-FDFE-FEB4-5081C4A55EA9}.Debug|x86.Build.0 = Debug|Any CPU
+		{BEE36BFD-558C-FDFE-FEB4-5081C4A55EA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BEE36BFD-558C-FDFE-FEB4-5081C4A55EA9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BEE36BFD-558C-FDFE-FEB4-5081C4A55EA9}.Release|x64.ActiveCfg = Release|Any CPU
+		{BEE36BFD-558C-FDFE-FEB4-5081C4A55EA9}.Release|x64.Build.0 = Release|Any CPU
+		{BEE36BFD-558C-FDFE-FEB4-5081C4A55EA9}.Release|x86.ActiveCfg = Release|Any CPU
+		{BEE36BFD-558C-FDFE-FEB4-5081C4A55EA9}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

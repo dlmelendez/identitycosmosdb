@@ -1,40 +1,41 @@
-﻿// MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
+﻿// MIT License Copyright (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 using System;
-using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Azure.Cosmos.Core;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB.Helpers
 {
     public static class HashHelper
     {
-        public static SHA256 sha = SHA256.Create();
-
         public static string ConvertToHash(string input)
         {
+            using SHA256 sha = SHA256.Create();
             return GetHash(sha, input);
         }
 
+#if NET8_0_OR_GREATER
+        public static string GetHash(SHA256 shaHash, ReadOnlySpan<char> input)
+        {
+            Span<byte> encodedBytes = stackalloc byte[Encoding.UTF8.GetMaxByteCount(input.Length)];
+            int encodedByteCount = Encoding.UTF8.GetBytes(input, encodedBytes);
+
+            Span<byte> hashedBytes = stackalloc byte[SHA256.HashSizeInBytes];
+            int hashedByteCount = SHA256.HashData(encodedBytes.Slice(0, encodedByteCount), hashedBytes);
+
+            return Convert.ToHexString(hashedBytes.Slice(0, hashedByteCount));
+        }
+
+#else
         private static string GetHash(SHA256 shaHash, string input)
         {
-            // Convert the input string to a byte array and compute the hash. 
-            byte[] data = shaHash.ComputeHash(Encoding.UTF8.GetBytes(input));
-            Console.WriteLine(string.Format("Key Size before hash: {0} bytes", Encoding.UTF8.GetBytes(input).Length));
+            // Convert the input string to a byte array and compute the hash
+            byte[] inputBytes = Encoding.UTF8.GetBytes(input);
+            byte[] hashBytes = shaHash.ComputeHash(inputBytes);
 
-            // Create a new Stringbuilder to collect the bytes 
-            // and create a string.
-            StringBuilder sBuilder = new StringBuilder(32);
-
-            // Loop through each byte of the hashed data  
-            // and format each one as a hexadecimal string. 
-            for (int i = 0; i < data.Length; i++)
-            {
-                sBuilder.Append(data[i].ToString("X2"));
-            }
-            Console.WriteLine(string.Format("Key Size after hash: {0} bytes", data.Length));
-
-            // Return the hexadecimal string. 
-            return sBuilder.ToString();
+            // Convert byte array to hexadecimal string more efficiently
+            return BitConverter.ToString(hashBytes).Replace("-", string.Empty);
         }
+#endif
     }
 }

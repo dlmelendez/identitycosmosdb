@@ -1,18 +1,13 @@
-﻿// MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
+﻿// MIT License Copyright (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using ElCamino.AspNetCore.Identity.CosmosDB;
-using Microsoft.AspNetCore.Identity;
-using ElCamino.AspNetCore.Identity.CosmosDB.Model;
-using Newtonsoft.Json;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using ElCamino.AspNetCore.Identity.CosmosDB.Tests.ModelTests;
-using System.Security.Claims;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Text.Json;
+using System.Threading.Tasks;
+using ElCamino.AspNetCore.Identity.CosmosDB.Tests.ModelTests;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using IdentityRole = ElCamino.AspNetCore.Identity.CosmosDB.Model.IdentityRole;
 using IdentityUser = ElCamino.AspNetCore.Identity.CosmosDB.Model.IdentityUser;
 
@@ -20,68 +15,18 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 {
     public partial class UserStoreTests : BaseTest<ApplicationUser, IdentityRole, IdentityCloudContext>
     {
-        #region Static and Const Members
-        public static object objectLock = new object();
-        public static string DefaultUserPassword = "M" + Guid.NewGuid().ToString();
+        public static readonly string DefaultUserPassword = "M" + Guid.NewGuid().ToString();
 
+        public TestContext TestContext { get; set; }
 
-#endregion
-
-        private ApplicationUser currentUser = null;
-        private ApplicationUser currentRoleUser = null;
-
-        private TestContext testContextInstance;
-        /// <summary>
-        ///Gets or sets the test context which provides
-        ///information about and functionality for the current test run.
-        ///</summary>
-        public TestContext TestContext
+        private readonly JsonSerializerOptions JsonOptions = new()
         {
-            get
-            {
-                return testContextInstance;
-            }
-            set
-            {
-                testContextInstance = value;
-            }
-        }
+            WriteIndented = true
+        };
 
-        public Task<ApplicationUser> CurrentUser(bool includeRoles)
+        public async Task<ApplicationUser> CurrentUserAsync(bool includeRoles)
         {
-            if (!includeRoles)
-            {
-                if (currentUser == null)
-                {
-                    lock (objectLock)
-                    {
-                        if (currentUser == null)
-                        {
-                            var task = CreateUser<ApplicationUser>(includeRoles);
-                            task.Wait();
-                            currentUser = task.Result;
-                        }
-                    }
-                }
-                return Task.FromResult(currentUser);
-            }
-            else
-            {
-                if (currentRoleUser == null)
-                {
-                    lock (objectLock)
-                    {
-                        if (currentRoleUser == null)
-                        {
-                            var task = CreateUser<ApplicationUser>(includeRoles);
-                            task.Wait();
-                            currentRoleUser = task.Result;
-                        }
-                    }
-                }
-                return Task.FromResult(currentRoleUser);
-            }
-
+            return await CreateUserAsync<ApplicationUser>(includeRoles);
         }
         
 
@@ -97,24 +42,23 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         }
         #endregion
 
-        private void WriteLineObject<t> (t obj)  where t : class
+        private void WriteLineObject<T>(T obj) where T : class
         {
-            Console.WriteLine(typeof(t).Name);
-            string strLine = obj == null ? "Null" : Newtonsoft.Json.JsonConvert.SerializeObject(obj, Newtonsoft.Json.Formatting.Indented);
+            Console.WriteLine(typeof(T).Name);
+            string strLine = obj is null ? "Null" : JsonSerializer.Serialize(obj, JsonOptions);
             Console.WriteLine("{0}", strLine);
         }
-
         private static Claim GenAdminClaim()
         {
             return new Claim(Constants.AccountClaimTypes.AccountTestAdminClaim, Guid.NewGuid().ToString());
         }
 
-        private Claim GenAdminClaimEmptyValue()
+        private static Claim GenAdminClaimEmptyValue()
         {
             return new Claim(Constants.AccountClaimTypes.AccountTestAdminClaim, string.Empty);
         }
 
-        private Claim GenUserClaim()
+        private static Claim GenUserClaim()
         {
             return new Claim(Constants.AccountClaimTypes.AccountTestUserClaim, Guid.NewGuid().ToString());
         }
@@ -140,7 +84,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             return user;
         }
 
-        private ApplicationUser GetTestAppUser()
+        private static ApplicationUser GetTestAppUser()
         {
             Guid id = Guid.NewGuid();
             ApplicationUser user = new ApplicationUser()
@@ -175,8 +119,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             user2.UserName = user.UserName;
             var result2 = await manager.CreateAsync(user2);
             Assert.IsFalse(result2.Succeeded);
-            Assert.IsTrue(new IdentityErrorDescriber().DuplicateUserName(user.UserName).Code
-                == result2.Errors.First().Code);
+            Assert.AreEqual(new IdentityErrorDescriber().DuplicateUserName(user.UserName).Code, result2.Errors.First().Code);
         }
 
         [TestMethod]
@@ -197,8 +140,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var result2 = await manager.CreateAsync(user2);
 
             Assert.IsFalse(result2.Succeeded);
-            Assert.IsTrue(new IdentityErrorDescriber().DuplicateEmail(user.Email).Code
-                == result2.Errors.First().Code);
+            Assert.AreEqual(new IdentityErrorDescriber().DuplicateEmail(user.Email).Code, result2.Errors.First().Code);
         }
 
         [TestMethod]
@@ -207,15 +149,15 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [DataRow(false, DisplayName = "NoRoleProvider")]
         public async Task CreateUserTest(bool includeRoles)
         {
-            WriteLineObject(await CreateTestUser<ApplicationUser>(includeRoles));
+            WriteLineObject(await CreateTestUserAsync<ApplicationUser>(includeRoles));
         }
 
-        public Task<T> CreateUser<T>(bool includeRoles) where T : IdentityUser, new()
+        public Task<T> CreateUserAsync<T>(bool includeRoles) where T : IdentityUser, new()
         {
-            return CreateTestUser<T>(includeRoles);
+            return CreateTestUserAsync<T>(includeRoles);
         }
 
-        private async Task<T> CreateTestUser<T>(bool includeRoles, bool createPassword = true, bool createEmail = true,
+        private async Task<T> CreateTestUserAsync<T>(bool includeRoles, bool createPassword = true, bool createEmail = true,
             string emailAddress = null) where T : IdentityUser, new()
         {
 
@@ -250,7 +192,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
                 }
             }
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.CreateAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.CreateAsync(null, TestContext.CancellationToken));
 
             return  (await manager.FindByIdAsync(user.Id)) as T;
         }
@@ -278,7 +220,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Console.WriteLine("User Id: {0}", user.Id);
             user = await manager.FindByIdAsync(user.Id);
             Assert.IsTrue(taskUser.Succeeded, string.Concat(taskUser.Errors));
-            List<Claim> lClaims = new List<Claim>();
+            List<Claim> lClaims = [];
             for (int i = 0; i < 2; i++)
             {
                 if (includeRoles)
@@ -325,7 +267,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             }
 
             user = await manager.FindByIdAsync(user.Id);
-            WriteLineObject<IdentityUser>(user);
+            WriteLineObject<ApplicationUser>(user);
 
 
             DateTime start = DateTime.UtcNow;
@@ -337,7 +279,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             var findUserTask = await manager.FindByIdAsync(user.Id);
             Assert.IsNull(findUserTask);
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.DeleteAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.DeleteAsync(null, TestContext.CancellationToken));
         
         }
 
@@ -348,10 +290,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [DataRow(false, DisplayName = "NoRoleProvider")]
         public async Task UpdateApplicationUser(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            _ = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var user = GetTestAppUser();
+            var user = UserStoreTests.GetTestAppUser();
             WriteLineObject<ApplicationUser>(user);
             var taskUser = await manager.CreateAsync(user, DefaultUserPassword);
             Assert.IsTrue(taskUser.Succeeded, string.Concat(taskUser.Errors));
@@ -387,7 +329,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GenTestUser();
-            WriteLineObject<IdentityUser>(user);
+            WriteLineObject<ApplicationUser>(user);
             var taskUser = await manager.CreateAsync(user, DefaultUserPassword);
             Assert.IsTrue(taskUser.Succeeded, string.Concat(taskUser.Errors));
             user = await manager.FindByIdAsync(user.Id);
@@ -397,7 +339,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             user = await manager.FindByIdAsync(user.Id);
             Assert.IsTrue(taskUserUpdate.Succeeded, string.Concat(taskUserUpdate.Errors));
             Assert.AreEqual<string>("Mike", user.FirstName);
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.UpdateAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.UpdateAsync(null, TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -409,7 +351,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var firstUser = await CreateTestUser<ApplicationUser>(includeRoles);
+            var firstUser = await CreateTestUserAsync<ApplicationUser>(includeRoles);
             Console.WriteLine("{0}", "Original User");
             WriteLineObject(firstUser);
             string originalPlainUserName = firstUser.UserName;
@@ -431,11 +373,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Assert.IsNotNull(changedUser);
             Assert.IsFalse(originalPlainUserName.Equals(changedUser.UserName, StringComparison.OrdinalIgnoreCase), "UserName property not updated.");
 
-            Assert.AreEqual<int>(firstUser.Roles.Count, changedUser.Roles.Count);
+            Assert.HasCount(firstUser.Roles.Count, changedUser.Roles);
 
-            Assert.AreEqual<int>(firstUser.Claims.Count, changedUser.Claims.Count);
+            Assert.HasCount(firstUser.Claims.Count, changedUser.Claims);
 
-            Assert.AreEqual<int>(firstUser.Logins.Count, changedUser.Logins.Count);
+            Assert.HasCount(firstUser.Logins.Count, changedUser.Logins);
 
             Assert.AreEqual<string>(originalUserId, changedUser.Id);
             Assert.AreNotEqual<string>(originalPlainUserName, changedUser.UserName);
@@ -455,7 +397,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
                 Assert.AreEqual<string>(originalUserId, taskFindLogin.Id.ToString());
             }
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.UpdateAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.UpdateAsync(null, TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -464,10 +406,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [DataRow(false, DisplayName = "NoRoleProvider")]
         public async Task FindUserByEmail(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            _ = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var user = await CreateUser<ApplicationUser>(includeRoles);
+            var user = await CreateUserAsync<ApplicationUser>(includeRoles);
             WriteLineObject<IdentityUser>(user);
 
             DateTime start = DateTime.UtcNow;
@@ -501,10 +443,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             DateTime start = DateTime.UtcNow;
             Console.WriteLine("FindAllByEmailAsync: {0}", strEmail);
 
-            var findUserTask = await store.FindAllByEmailAsync(strEmail); 
+            var findUserTask = await store.FindAllByEmailAsync(strEmail, TestContext.CancellationToken); 
             Console.WriteLine("FindAllByEmailAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
-            Console.WriteLine("Users Found: {0}", findUserTask.Count());
-            Assert.AreEqual<int>(createdCount, findUserTask.Count());
+            Console.WriteLine("Users Found: {0}", findUserTask.Count);
+            Assert.HasCount(createdCount, findUserTask);
 
             var listCreated = findUserTask.ToList();
 
@@ -521,10 +463,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             //Make sure changed user doesn't show up in previous query
             start = DateTime.UtcNow;
 
-            findUserTask = await store.FindAllByEmailAsync(strEmail);
+            findUserTask = await store.FindAllByEmailAsync(strEmail, TestContext.CancellationToken);
             Console.WriteLine("FindAllByEmailAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
-            Console.WriteLine("Users Found: {0}", findUserTask.Count());
-            Assert.AreEqual<int>(listCreated.Count() - 1, findUserTask.Count());
+            Console.WriteLine("Users Found: {0}", findUserTask.Count);
+            Assert.HasCount(listCreated.Count - 1, findUserTask);
         }
 
         [TestMethod]
@@ -533,10 +475,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [DataRow(false, DisplayName = "NoRoleProvider")]
         public async Task FindUserById(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            _ = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var user = await CurrentUser(includeRoles);
+            var user = await CurrentUserAsync(includeRoles);
             DateTime start = DateTime.UtcNow;
             var findUser = await manager.FindByIdAsync(user.Id);
 
@@ -554,10 +496,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [DataRow(false, DisplayName = "NoRoleProvider")]
         public async Task FindUserByName(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            _ = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var user = await CurrentUser(includeRoles);
+            var user = await CurrentUserAsync(includeRoles);
             WriteLineObject<IdentityUser>(user);
             DateTime start = DateTime.UtcNow;
             var findUser = await manager.FindByNameAsync(user.UserName);
@@ -576,7 +518,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [DataRow(false, DisplayName = "NoRoleProvider")]
         public async Task AddUserLogin(bool includeRoles)
         {
-            var user = await CreateTestUser<ApplicationUser>(includeRoles, false);
+            var user = await CreateTestUserAsync<ApplicationUser>(includeRoles, false);
             WriteLineObject(user);
             await AddUserLoginHelper(user, GenGoogleLogin(), includeRoles);
         }
@@ -611,7 +553,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [DataRow(false, DisplayName = "NoRoleProvider")]
         public async Task AddRemoveUserToken(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            _ = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var user = GenTestUser();
@@ -699,20 +641,20 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Assert.IsTrue(userRemoveLoginTask.Succeeded, string.Concat(userRemoveLoginTask.Errors));
            
             var loginGetTask3 = await manager.GetLoginsAsync(user);
-            Assert.IsTrue(!loginGetTask3.Any(), "LoginInfo not removed");
+            Assert.IsFalse(loginGetTask3.Any(), "LoginInfo not removed");
 
             //Negative cases
 
             var loginFindNeg = await manager.FindByLoginAsync("asdfasdf", "http://4343443dfaksjfaf");
             Assert.IsNull(loginFindNeg);
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.AddLoginAsync(null, loginInfo));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.AddLoginAsync(null, loginInfo, TestContext.CancellationToken));
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.AddLoginAsync(user, null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.AddLoginAsync(user, null, TestContext.CancellationToken));
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.RemoveLoginAsync(null, loginInfo.ProviderKey, loginInfo.LoginProvider));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.RemoveLoginAsync(null, loginInfo.ProviderKey, loginInfo.LoginProvider, TestContext.CancellationToken));
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.GetLoginsAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.GetLoginsAsync(null, TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -721,8 +663,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         public async Task AddUserRole(bool includeRoles)
         {
             string strUserRole = string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N"));
-            WriteLineObject<IdentityUser>(await CurrentUser(includeRoles));
-            await AddUserRoleHelper(await CurrentUser(includeRoles), strUserRole, includeRoles);
+            WriteLineObject<IdentityUser>(await CurrentUserAsync(includeRoles));
+            await AddUserRoleHelper(await CurrentUserAsync(includeRoles), strUserRole, includeRoles);
         }
 
         [TestMethod]
@@ -764,7 +706,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
             var userRole = await rmanager.FindByNameAsync(roleName);
             IdentityRole role = userRole;
-            if (userRole == null)
+            if (userRole is null)
             {
                 var taskResult = await rmanager.CreateAsync(new IdentityRole(roleName));
                 Assert.IsTrue(taskResult.Succeeded);
@@ -778,8 +720,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         {
             var identityRole = await CreateRoleIfNotExists(includeRoles, roleName);
             Console.WriteLine($"RoleId: {identityRole.Id}");
-
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
+            _ = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
             var userRoleTask = await manager.AddToRoleAsync(user, roleName);
@@ -802,7 +743,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
-            var user = await CurrentUser(includeRoles);
+            var user = await CurrentUserAsync(includeRoles);
             user = await manager.FindByIdAsync(user.Id);
             WriteLineObject(user.Id);
             var userRoleTask = await manager.AddToRoleAsync(user, roleName);
@@ -813,7 +754,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
             var getout = string.Format("{0} ms", (DateTime.UtcNow - getRolesStart).TotalMilliseconds);
             Console.WriteLine(getout);
-            Assert.IsTrue(tempRoles.Contains(roleName), "Role not found");
+            Assert.Contains(roleName, tempRoles, "Role not found");
 
             DateTime isInRolesStart = DateTime.UtcNow;
 
@@ -832,20 +773,20 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
             Console.WriteLine("GetRolesAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
 
-            Assert.IsFalse(rolesTask2.Contains(roleName), "Role not removed.");
+            Assert.DoesNotContain(roleName, rolesTask2, "Role not removed.");
 
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.AddToRoleAsync(null, roleName));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.AddToRoleAsync(null, roleName, TestContext.CancellationToken));
 
-            await Assert.ThrowsExceptionAsync <ArgumentException>(async () => await store.AddToRoleAsync(user, null));
+            await Assert.ThrowsAsync <ArgumentException>(async () => await store.AddToRoleAsync(user, null, TestContext.CancellationToken));
 
-            await Assert.ThrowsExceptionAsync<InvalidOperationException>(async () => await store.AddToRoleAsync(user, Guid.NewGuid().ToString()));
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => await store.AddToRoleAsync(user, Guid.NewGuid().ToString(), TestContext.CancellationToken));
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.RemoveFromRoleAsync(null, roleName));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.RemoveFromRoleAsync(null, roleName, TestContext.CancellationToken));
 
-            await Assert.ThrowsExceptionAsync<ArgumentException>(async () => await store.RemoveFromRoleAsync(user, null));
+            await Assert.ThrowsAsync<ArgumentException>(async () => await store.RemoveFromRoleAsync(user, null, TestContext.CancellationToken));
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.GetRolesAsync(null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.GetRolesAsync(null, TestContext.CancellationToken));
 
         }
 
@@ -857,7 +798,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var user = await CurrentUser(includeRoles);
+            var user = await CurrentUserAsync(includeRoles);
             WriteLineObject(user);
             string roleName = string.Format("{0}_{1}", Constants.AccountRoles.AccountTestUserRole, Guid.NewGuid().ToString("N"));
 
@@ -869,8 +810,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Console.WriteLine("IsInRoleAsync: {0} seconds", (DateTime.UtcNow - start).TotalSeconds);
             Assert.IsTrue(roles2Task, "Role not found");
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.IsInRoleAsync(null, roleName));
-            await Assert.ThrowsExceptionAsync<ArgumentException>(async () => await store.IsInRoleAsync(user, null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.IsInRoleAsync(null, roleName, TestContext.CancellationToken));
+            await Assert.ThrowsAsync<ArgumentException>(async () => await store.IsInRoleAsync(user, null, TestContext.CancellationToken));
            
         }
 
@@ -881,8 +822,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
         public async Task GenerateUsers(bool includeRoles)
         {
-            UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
-            UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
+            _ = CreateUserStore(includeRoles);
+            _ = CreateUserManager(includeRoles);
 
             int userCount = 10;
             DateTime start2 = DateTime.UtcNow;
@@ -904,8 +845,8 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [DataRow(false, DisplayName = "NoRoleProvider")]
         public async Task AddUserClaim(bool includeRoles)
         {
-            WriteLineObject<IdentityUser>(await CurrentUser(includeRoles));
-            await AddUserClaimHelper(await CurrentUser(includeRoles), GenUserClaim(), includeRoles);
+            WriteLineObject<IdentityUser>(await CurrentUserAsync(includeRoles));
+            await AddUserClaimHelper(await CurrentUserAsync(includeRoles), UserStoreTests.GenUserClaim(), includeRoles);
         }
 
         private async Task AddUserClaimHelper(ApplicationUser user, Claim claim, bool includeRoles)
@@ -925,7 +866,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
         [DataRow(false, DisplayName = "NoRoleProvider")]
         public async Task GetUsersByClaim(bool includeRoles)
         {
-            var claim = GenUserClaim();
+            var claim = UserStoreTests.GenUserClaim();
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
@@ -959,7 +900,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             UserStore<ApplicationUser, IdentityRole, IdentityCloudContext> store = CreateUserStore(includeRoles);
             UserManager<ApplicationUser> manager = CreateUserManager(includeRoles);
 
-            var user = await CurrentUser(includeRoles);
+            var user = await CurrentUserAsync(includeRoles);
             WriteLineObject<IdentityUser>(user);
             Claim claim = GenAdminClaim();
 
@@ -976,10 +917,10 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             Assert.IsTrue(userClaimTask.Succeeded, string.Concat(userClaimTask.Errors));
             var claimsTask2 = await manager.GetClaimsAsync(user);
 
-            Assert.IsTrue(!claimsTask2.Any(c => c.Value == claim.Value & c.ValueType == claim.ValueType), "Claim not removed");
+            Assert.IsFalse(claimsTask2.Any(c => c.Value == claim.Value & c.ValueType == claim.ValueType), "Claim not removed");
 
             //adding test for removing an empty claim
-            Claim claimEmpty = GenAdminClaimEmptyValue();
+            Claim claimEmpty = UserStoreTests.GenAdminClaimEmptyValue();
 
             var userClaimTask2 = await manager.AddClaimAsync(user, claimEmpty);
 
@@ -987,17 +928,17 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
 
             Assert.IsTrue(userClaimTask2.Succeeded, string.Concat(userClaimTask2.Errors));
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.AddClaimsAsync(null, new List<Claim>() { claim }));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.AddClaimsAsync(null, [claim], TestContext.CancellationToken));
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async() => await store.AddClaimsAsync(user, null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async() => await store.AddClaimsAsync(user, null, TestContext.CancellationToken));
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.RemoveClaimsAsync(null, new List<Claim>() { claim }));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.RemoveClaimsAsync(null, [claim], TestContext.CancellationToken));
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.RemoveClaimsAsync(user, null));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.RemoveClaimsAsync(user, null, TestContext.CancellationToken));
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.RemoveClaimsAsync(user, new List<Claim>() { new Claim(claim.Type, null) }));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.RemoveClaimsAsync(user, [new Claim(claim.Type, null)], TestContext.CancellationToken));
 
-            await Assert.ThrowsExceptionAsync<ArgumentNullException>(async () => await store.AddClaimsAsync(null, new List<Claim>() { claim }));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await store.AddClaimsAsync(null, [claim], TestContext.CancellationToken));
         }
 
         [TestMethod]
@@ -1008,7 +949,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB.Tests
             store.Dispose();
             GC.Collect();
 
-            await Assert.ThrowsExceptionAsync<ObjectDisposedException>(async () => await store.DeleteAsync(new ApplicationUser()));
+            await Assert.ThrowsAsync<ObjectDisposedException>(async () => await store.DeleteAsync(new ApplicationUser(), TestContext.CancellationToken));
         }
 
     }

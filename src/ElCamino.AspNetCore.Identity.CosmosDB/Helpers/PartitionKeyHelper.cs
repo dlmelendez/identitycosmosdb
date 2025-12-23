@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ElCamino.AspNetCore.Identity.CosmosDB.Helpers
+﻿namespace ElCamino.AspNetCore.Identity.CosmosDB.Helpers
 {
     public static class PartitionKeyHelper
     {

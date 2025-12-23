@@ -1,11 +1,14 @@
-﻿// MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
+﻿// MIT License Copyright (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 
 using System;
 using Microsoft.AspNetCore.Identity;
 using ElCamino.AspNetCore.Identity.CosmosDB.Model;
 using ElCamino.AspNetCore.Identity.CosmosDB;
+using System.Threading.Tasks;
 
+#pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace Microsoft.Extensions.DependencyInjection
+#pragma warning restore IDE0130 // Namespace does not match folder structure
 {
 	public static class IdentityCosmosDBBuilderExtensions
 	{
@@ -16,16 +19,16 @@ namespace Microsoft.Extensions.DependencyInjection
 			builder.Services.AddSingleton<IdentityConfiguration>(new Func<IServiceProvider, IdentityConfiguration>(p=> configAction()));
 
             Type contextType = typeof(TContext);
-            Type userStoreType = builder.RoleType != null ?
+            Type userStoreType = builder.RoleType is not null ?
                 typeof(UserStore<,,>).MakeGenericType(builder.UserType, builder.RoleType, contextType)
                 : typeof(UserStore<,>).MakeGenericType(builder.UserType, contextType);
 
-            builder.Services.AddScoped(contextType, contextType);
+            builder.Services.AddSingleton(contextType, contextType);
 
             builder.Services.AddScoped(
                 typeof(IUserStore<>).MakeGenericType(builder.UserType),
                 userStoreType);
-            if (builder.RoleType != null)
+            if (builder.RoleType is not null)
             {
                 Type roleStoreType = typeof(RoleStore<,>).MakeGenericType(builder.RoleType, contextType);
 

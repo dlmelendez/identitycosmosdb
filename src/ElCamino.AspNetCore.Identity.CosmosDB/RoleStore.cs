@@ -1,21 +1,17 @@
-﻿// MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
+﻿// MIT License Copyright (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using System.Net;
-using System.Diagnostics;
-using ElCamino.AspNetCore.Identity.CosmosDB.Model;
 using Microsoft.Azure.Cosmos;
-using Microsoft.Azure.Cosmos.Linq;
-using Newtonsoft.Json;
 using System.Threading;
-using ElCamino.AspNetCore.Identity.CosmosDB.Extensions;
 using System.Security.Claims;
 using ElCamino.AspNetCore.Identity.CosmosDB.Helpers;
-
+#if NETSTANDARD2_0 || NET8_0
+using ElCamino.AspNetCore.Identity.CosmosDB.Extensions;
+#endif
 namespace ElCamino.AspNetCore.Identity.CosmosDB
 {
 
@@ -53,18 +49,25 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
             }
         }
 
-        public override async Task<IList<Claim>> GetClaimsAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task<IList<Claim>> GetClaimsAsync(TRole role, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            if (role == null)
+#if NET8_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(role);
+#else
+            if (role is null)
             {
                 throw new ArgumentNullException(nameof(role));
             }
+#endif
 
-            role = await FindByIdAsync(role.Id);
-            if (role != null)
-                return await role.Claims.Select(c => new Claim(c.ClaimType, c.ClaimValue)).ToListAsync(cancellationToken: cancellationToken);
-            return new List<Claim>();
+            role = await FindByIdAsync(role.Id, cancellationToken);
+            if (role is not null)
+            {
+                return await Task.FromResult(role.Claims.Select(c => new Claim(c.ClaimType, c.ClaimValue)).ToList())
+                    .ConfigureAwait(false);
+            }
+            return [];
         }
 
         /// <summary>
@@ -74,20 +77,25 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="claim">The claim to add to the role.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
-        public override Task AddClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken = default(CancellationToken))
+        public override Task AddClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            if (role == null)
+#if NET8_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(role);
+            ArgumentNullException.ThrowIfNull(claim);
+#else
+            if (role is null)
             {
                 throw new ArgumentNullException(nameof(role));
             }
-            if (claim == null)
+            if (claim is null)
             {
                 throw new ArgumentNullException(nameof(claim));
             }
+#endif
 
             role.Claims.Add(CreateRoleClaim(role, claim));
-            return TaskCacheExtensions.CompletedTask;
+            return Task.CompletedTask;
         }        
 
     }
@@ -105,49 +113,66 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         public RoleStore(TContext context, IdentityErrorDescriber describer = null) : base(describer)
         {
+#if NET8_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(context);
+            Context = context;
+#else
             Context = context ?? throw new ArgumentNullException(nameof(context));
+#endif
             _roleTable = context.IdentityContainer;
 
         }
 
-        public override async Task<IdentityResult> CreateAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task<IdentityResult> CreateAsync(TRole role, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            if (role == null)
+#if NET8_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(role);
+#else
+            if (role is null)
             {
                 throw new ArgumentNullException(nameof(role));
             }
+#endif
 
-            var doc = await Context.IdentityContainer.CreateItemAsync<TRole>(role, new PartitionKey(role.PartitionKey), Context.RequestOptions);
+            var doc = await Context.IdentityContainer.CreateItemAsync<TRole>(role, new PartitionKey(role.PartitionKey), Context.RequestOptions, cancellationToken);
             Context.SetSessionTokenIfEmpty(doc.Headers.Session);
             return IdentityResult.Success;
         }
 
-        public async override Task<IdentityResult> UpdateAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task<IdentityResult> UpdateAsync(TRole role, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            if (role == null)
+#if NET8_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(role);
+#else
+            if (role is null)
             {
                 throw new ArgumentNullException(nameof(role));
             }
+#endif
 
             role.ConcurrencyStamp = Guid.NewGuid().ToString();
-            var doc = await Context.IdentityContainer.UpsertItemAsync<TRole>(role, new PartitionKey(role.PartitionKey), Context.RequestOptions);
+            var doc = await Context.IdentityContainer.UpsertItemAsync<TRole>(role, new PartitionKey(role.PartitionKey), Context.RequestOptions, cancellationToken);
             Context.SetSessionTokenIfEmpty(doc.Headers.Session);
             return IdentityResult.Success;
         }
 
-        public async override Task<IdentityResult> DeleteAsync(TRole role, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task<IdentityResult> DeleteAsync(TRole role, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            if (role == null)
+#if NET8_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(role);
+#else
+            if (role is null)
             {
                 throw new ArgumentNullException(nameof(role));
             }
-            var doc = await Context.IdentityContainer.DeleteItemAsync<TRole>(role.Id.ToString(), new PartitionKey(role.PartitionKey), Context.RequestOptions);
+#endif
+            var doc = await Context.IdentityContainer.DeleteItemAsync<TRole>(role.Id.ToString(), new PartitionKey(role.PartitionKey), Context.RequestOptions, cancellationToken);
             Context.SetSessionTokenIfEmpty(doc.Headers.Session);
 
             return IdentityResult.Success;
@@ -156,20 +181,17 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         public new void Dispose()
         {
             base.Dispose();
-            this.Dispose(true);
+            Dispose(true);
         }
 
         protected virtual void Dispose(bool disposing)
         {
             if (!_disposed && disposing)
             {
-                if (Context != null)
-                {
-                    this.Context.Dispose();
-                }
-                this._roleTable = null;
-                this.Context = null;
-                this._disposed = true;
+                Context?.Dispose();
+                _roleTable = null;
+                Context = null;
+                _disposed = true;
             }
         }
 
@@ -180,7 +202,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="id">The role ID to look for.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>A <see cref="Task{TResult}"/> that result of the look up.</returns>
-        public override Task<TRole> FindByIdAsync(string id, CancellationToken cancellationToken = default(CancellationToken))
+        public override Task<TRole> FindByIdAsync(string id, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -193,7 +215,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="normalizedName">The normalized role name to look for.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>A <see cref="Task{TResult}"/> that result of the look up.</returns>
-        public override async Task<TRole> FindByNameAsync(string normalizedName, CancellationToken cancellationToken = default(CancellationToken))
+        public override async Task<TRole> FindByNameAsync(string normalizedName, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -211,7 +233,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             if (feedIterator.HasMoreResults)
             {
-                return (await feedIterator.ReadNextAsync()).FirstOrDefault();
+                return (await feedIterator.ReadNextAsync(cancellationToken)).FirstOrDefault();
             }
 
             return null;
@@ -245,17 +267,22 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         /// <param name="claim">The claim to remove from the role.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> used to propagate notifications that the operation should be canceled.</param>
         /// <returns>The <see cref="Task"/> that represents the asynchronous operation.</returns>
-        public override Task RemoveClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken = default(CancellationToken))
+        public override Task RemoveClaimAsync(TRole role, Claim claim, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            if (role == null)
+#if NET8_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(role);
+            ArgumentNullException.ThrowIfNull(claim);
+#else
+            if (role is null)
             {
                 throw new ArgumentNullException(nameof(role));
             }
-            if (claim == null)
+            if (claim is null)
             {
                 throw new ArgumentNullException(nameof(claim));
             }
+#endif
 
             var claims = role.Claims.Where(rc => rc.RoleId.Equals(role.Id) && rc.ClaimValue == claim.Value && rc.ClaimType == claim.Type).ToList();
             foreach (var c in claims)
@@ -263,7 +290,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 role.Claims.Remove(c);
             }
 
-            return TaskCacheExtensions.CompletedTask;
+            return Task.CompletedTask;
         }
 
         /// <summary>

@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyTitle>Web Project Templates for Azure CosmosDB Provider for ASP.NET Identity Core</AssemblyTitle>
+    <Authors>David Melendez</Authors>
+    <TargetFramework>net10.0</TargetFramework>
+    <Title>ElCamino.AspNetCore.Identity.CosmosDB.Templates</Title>
+    <PackageId>ElCamino.AspNetCore.Identity.CosmosDB.Templates</PackageId>
+    <Description>ASP.NET Core Web Template Pack for ElCamino Identity Azure CosmosDB</Description>
+    <PackageTags>ASP.NET;Identity Core;Azure;CosmosDB;MVC;UserStore;RoleStore;UserManager;multi-tenant;geo-redundant;Microsoft.AspNetCore.Identity</PackageTags>
+    <Copyright>Copyright ©  David Melendez, MIT License</Copyright>
+    <PackageIcon>projectNugetPic.png</PackageIcon>
+    <PackageType>Template</PackageType>
+    <IncludeContentInPack>true</IncludeContentInPack>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <ContentTargetFolders>content</ContentTargetFolders>
+    <IsPackable>true</IsPackable>
+    <PackageLicenseUrl></PackageLicenseUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/dlmelendez/identitycosmosdb.git</RepositoryUrl>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Version>10.0</Version>
+    <PackageProjectUrl>https://dlmelendez.github.io/identitycosmosdb</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <PackageReleaseNotes>Check https://github.com/dlmelendez/identitycosmosdb/releases for the latest release information.</PackageReleaseNotes>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="templates\**\*" Exclude="templates\**\bin\**;templates\**\obj\**" />
+    <Compile Remove="**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Link="README.md">
+      <PackagePath>\</PackagePath>
+      <Pack>True</Pack>
+    </None>
+    <None Include="../src/ElCamino.AspNetCore.Identity.CosmosDB/projectNugetPic.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

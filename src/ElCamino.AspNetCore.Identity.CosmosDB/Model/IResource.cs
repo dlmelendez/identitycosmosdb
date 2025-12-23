@@ -1,16 +1,14 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
+using System.Text.Json.Serialization;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB.Model
 {
     interface IResource<TKey> where TKey : IEquatable<TKey>
     {
-        [JsonProperty(PropertyName = "id")]
+        [JsonPropertyName("id")]
         TKey Id { get; set; }
 
-        [JsonProperty(PropertyName = "_etag")]
+        [JsonPropertyName("_etag")]
         string ETag { get; set; }
 
         string PartitionKey { get; set; }

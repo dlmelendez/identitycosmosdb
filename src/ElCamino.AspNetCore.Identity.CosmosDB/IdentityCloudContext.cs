@@ -1,18 +1,14 @@
-﻿// MIT License Copyright 2019 (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
+﻿// MIT License Copyright (c) David Melendez. All rights reserved. See License.txt in the project root for license information.
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using ElCamino.AspNetCore.Identity.CosmosDB.Model;
-using System.Diagnostics;
-using System.Reflection;
-using System.IO;
-using System.Collections.ObjectModel;
-using System.Collections.Concurrent;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Scripts;
-using Microsoft.Azure.Cosmos.Linq;
 
 namespace ElCamino.AspNetCore.Identity.CosmosDB
 {
@@ -22,9 +18,9 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
         {
             private CosmosClient _client = null;
             private Database _db = null;
-            private string _databaseId = null;
+            private readonly string _databaseId = null;
             private Container _identityContainer;
-            private string _identityContainerId;
+            private readonly string _identityContainerId;
             private string _sessionToken = string.Empty;
             private bool _disposed = false;
 
@@ -55,7 +51,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             private void InitDatabase()
             {
-                if (_db == null)
+                if (_db is null)
                 {
                     _db = _client.GetDatabase(_databaseId);
                 }
@@ -63,13 +59,21 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             private async Task CreateContainerAsync()
             {
-                var containerResponse = await _db.CreateContainerIfNotExistsAsync(new ContainerProperties(_identityContainerId, "/partitionKey"));
-                IdentityContainer = containerResponse.Container;
+                try
+                {
+                    var containerResponse = await _db.CreateContainerIfNotExistsAsync(new ContainerProperties(_identityContainerId, "/partitionKey"));
+                    IdentityContainer = containerResponse.Container;
+                }
+                catch (CosmosException ex)
+                    when (ex.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    // Ignore conflicts on container creation
+                }
             }
 
             private void InitCollection()
             {
-                if (IdentityContainer == null)
+                if (IdentityContainer is null)
                 {
                     IdentityContainer = _db.GetContainer(_identityContainerId);
                 }
@@ -77,7 +81,15 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             private async Task CreateStoredProcsAsync()
             {
-                await CreateSprocGetUserByIdAsync();
+                try
+                {
+                    await CreateSprocGetUserByIdAsync();
+                }
+                catch(CosmosException ex)
+                    when (ex.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    // Ignore conflicts on sproc creation
+                }
             }
 
             private async Task CreateSprocGetUserByIdAsync()
@@ -87,34 +99,42 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 using (StreamReader sr = new StreamReader(typeof(IdentityCloudContext).GetTypeInfo().Assembly.GetManifestResourceStream(
                     "ElCamino.AspNetCore.Identity.CosmosDB.StoredProcs.getUserById_sproc.js"), Encoding.UTF8))
                 {
-                    body = sr.ReadToEnd();
+                    body = await sr.ReadToEndAsync();
                 }
                 string strId = "getUserById_v1";
-                
-                TryDeleteStoredProcedure(_identityContainer, strId).Wait();
-                StoredProcedureResponse response = await _identityContainer.Scripts.CreateStoredProcedureAsync(
-                    new StoredProcedureProperties(strId, body));
-                
+                if (await StoredProcedureExistsAsync(IdentityContainer, strId))
+                {
+                    _ = await IdentityContainer.Scripts.ReplaceStoredProcedureAsync(
+                     new StoredProcedureProperties(strId, body));
+                }
+                else
+                {
+                    _ = await IdentityContainer.Scripts.CreateStoredProcedureAsync(
+                        new StoredProcedureProperties(strId, body));
+                }
+
+
             }
 
-            private async Task TryDeleteStoredProcedure(Container container, string sprocId)
+            private static async Task<bool> StoredProcedureExistsAsync(Container container, string sprocId)
             {
                 Scripts cosmosScripts = container.Scripts;
-
+                StoredProcedureResponse sproc;
                 try
                 {
-                    StoredProcedureResponse sproc = await cosmosScripts.ReadStoredProcedureAsync(sprocId);
-                    await cosmosScripts.DeleteStoredProcedureAsync(sprocId);
+                    sproc = await cosmosScripts.ReadStoredProcedureAsync(sprocId);
+                    return true;
                 }
-                catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+                catch (CosmosException ex)
+                    when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    //Nothing to delete
-                }
+                    return false;
+                }                
             }
 
             ~InternalContext()
             {
-                this.Dispose(false);
+                Dispose(false);
             }
 
             public CosmosClient Client
@@ -135,7 +155,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 {
                     return new ItemRequestOptions()
                     {
-                        ConsistencyLevel = this.ConsistencyLevel,
+                        ConsistencyLevel = ConsistencyLevel,
                         SessionToken = SessionToken,
                     };
                 }
@@ -148,7 +168,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                     return new QueryRequestOptions()
                     {
                         EnableScanInQuery = true,
-                        ConsistencyLevel = this.ConsistencyLevel,                           
+                        ConsistencyLevel = ConsistencyLevel,                           
                     };
                 }
             }
@@ -174,7 +194,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             protected void ThrowIfDisposed()
             {
-                if (this._disposed)
+                if (_disposed)
                 {
                     throw new ObjectDisposedException(base.GetType().Name);
                 }
@@ -182,7 +202,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
             public void Dispose()
             {
-                this.Dispose(true);
+                Dispose(true);
             }
 
             protected virtual void Dispose(bool disposing)
@@ -197,11 +217,11 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
                 }
             }
         }
-        private bool _disposed = false;
+        private readonly bool _disposed = false;
 
         //Thread safe dictionary 
-        private static readonly ConcurrentDictionary<string, InternalContext> ContextCache = new ConcurrentDictionary<string, InternalContext>();
-        private string _configHash = null;
+        private static readonly ConcurrentDictionary<string, InternalContext> ContextCache = new();
+        private readonly string _configHash = null;
         private InternalContext _currentContext = null;
 
         public string GetUserByIdSproc
@@ -230,7 +250,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         ~IdentityCloudContext()
         {
-            this.Dispose(false);
+            Dispose(false);
         }
 
         public CosmosClient Client
@@ -284,7 +304,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         protected void ThrowIfDisposed()
         {
-            if (this._disposed)
+            if (_disposed)
             {
                 throw new ObjectDisposedException(base.GetType().Name);
             }
@@ -292,7 +312,7 @@ namespace ElCamino.AspNetCore.Identity.CosmosDB
 
         public void Dispose()
         {
-            this.Dispose(true);
+            Dispose(true);
         }
 
         protected virtual void Dispose(bool disposing)

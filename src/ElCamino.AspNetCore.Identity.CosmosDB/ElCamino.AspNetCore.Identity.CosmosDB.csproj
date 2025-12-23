@@ -1,10 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Description>Azure CosmosDB Provider to support AspNet Identity Core frameworks for .NET.</Description>
-    <Copyright>Copyright © 2019 David Melendez, MIT License</Copyright>
+    <Copyright>Copyright © 2026 David Melendez, MIT License</Copyright>
     <AssemblyTitle>Azure CosmosDB Provider for ASP.NET Identity Core</AssemblyTitle>
     <Authors>David Melendez</Authors>
-    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net8.0;net10.0;</TargetFrameworks>
+	  <LangVersion>14.0</LangVersion>
     <AssemblyName>ElCamino.AspNetCore.Identity.CosmosDB</AssemblyName>
     <AssemblyOriginatorKeyFile>../../tools/Key.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
@@ -21,24 +22,28 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/dlmelendez/identitycosmosdb.git</RepositoryUrl>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Version>3.0.1</Version>
-    <AssemblyVersion>3.0.1.0</AssemblyVersion>
-    <FileVersion>3.0.1.0</FileVersion>
+    <Version>10.0</Version>
     <PackageProjectUrl>https://github.com/dlmelendez/identitycosmosdb</PackageProjectUrl>
     <DebugType>Full</DebugType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <AzureCosmosDisableNewtonsoftJsonCheck>true</AzureCosmosDisableNewtonsoftJsonCheck>
   </PropertyGroup>
-  
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.4.1" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="2.2.0" />
-    <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.56.0" />
   </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0' ">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.*" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="10.0.*" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net10.0' ">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.*" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="8.0.*" />
+  </ItemGroup>
+
   <ItemGroup>
     <EmbeddedResource Include="StoredProcs\getUserById_sproc.js">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
@@ -58,6 +63,10 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Include="projectNugetPic.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
